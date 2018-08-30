@@ -17,10 +17,10 @@ class GemiSpider(scrapy.Spider):
         }
     }
 
-    def generate_search_urls(self):
+    def generate_search_urls_and_extra_info(self):
 
         search_urls = []
-        extra_infos = []
+        extras = []
         base_url = 'https://www.yachtworld.com/core/listing/cache/searchResults.jsp'
 
         # default query
@@ -38,7 +38,6 @@ class GemiSpider(scrapy.Spider):
         fuels = {'gas': 100, 'diesel': 101, 'other': 102}
         number_of_engines = {1: 100, 2: 101, 'other': 102, 'none': 103}
         is_new = [True, False]
-
         recently = {1: 1535580789155, 3: 1535407989155, 7: 1535062389155, 14: 1534457589155, 30: 1533075189155,
                     60: 1530483189155}
 
@@ -51,6 +50,7 @@ class GemiSpider(scrapy.Spider):
                                           'material': material, 'fuel': fuel, 'number_of_engines': engine_number}
 
                             search_query = {'fromLength': fromLength,
+                                            'fromYear': fromYear,
                                             'fromPrice': fromPrice,
                                             'toPrice': toPrice,
                                             'luom': luom,  # unit id
@@ -64,21 +64,23 @@ class GemiSpider(scrapy.Spider):
                                             }
                             search_url = urlencode(OrderedDict(data=base_url, search=search_query))
                             search_urls.append(search_url)
-                            extra_infos.append(extra_info)
+                            extras.append(extra_info)
 
-        return search_urls, extra_infos
+        return search_urls, extras
 
     def __init__(self, next_page=False, *args, **kwargs):
         super(GemiSpider, self).__init__(*args, **kwargs)
-        self.urls, self.extra_infos = self.generate_search_urls()
+        self.urls, self.extra_info = self.generate_search_urls_and_extra_info()
         self.next_page = next_page
 
     def start_requests(self):
-        for url, extra_info_for_query in zip(self.urls, self.extra_infos):
+        for url, extra_info_for_query in zip(self.urls, self.extra_info):
             yield scrapy.Request(url=url,
-                                 meta={'dont_redirect': True, 'extra_info' : extra_info_for_query}, callback = self.parse)
+                                 meta={'extra_info': extra_info_for_query},
+                                 callback=self.parse)
 
         def parse(self, response):
+            # selectors
             search_results_table_selector = 'div#searchResultsDetailsABTest'
             result_count_selector = 'div.searchResultsCount--mobile-container__searchResultsCount'
             link_selector = 'div.make-model a::attr(href)'
