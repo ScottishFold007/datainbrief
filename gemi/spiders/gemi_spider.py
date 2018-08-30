@@ -16,11 +16,12 @@ class GemiSpider(scrapy.Spider):
             'gemi.pipelines.MongoPipeline': 300,  # pipeline with smaller number executed first
         }
     }
-
+    # entry point
     def __init__(self, next_page=False, *args, **kwargs):
         super(GemiSpider, self).__init__(*args, **kwargs)
-        self.urls, self.extra_info = self.generate_search_urls_and_extra_info()
+        self.urls, self.extra_info = GemiUtil.generate_search_urls_and_extra_info()
         self.next_page = next_page
+
 
     def start_requests(self):
         for url, extra_info_for_query in zip(self.urls, self.extra_info):
@@ -28,12 +29,7 @@ class GemiSpider(scrapy.Spider):
                                  meta={'extra_info': extra_info_for_query},
                                  callback=self.parse)
 
-    def remove_empty_prices(self, prices):
-        for i, price in enumerate(prices):
-            clean_price = price.replace('\n', '').strip()
-            if clean_price == '':
-                prices.pop(i)
-        return prices
+
 
     def parse(self, response):
         # selectors
@@ -75,7 +71,7 @@ class GemiSpider(scrapy.Spider):
             locations = ad.css(location_selector).extract()
             brokers = ad.css(broker_selector).extract()
             # remove empty prices
-            prices = self.remove_empty_prices(prices)
+            prices = GemiUtil.remove_empty_prices(prices)
 
             self.process_items(lengths, links, prices, locations, brokers, extra_info)
 
@@ -107,7 +103,18 @@ class GemiSpider(scrapy.Spider):
             }
 
 
-    def generate_search_urls_and_extra_info(self):
+class GemiUtil(object):
+
+    @staticmethod
+    def remove_empty_prices(self, prices):
+        for i, price in enumerate(prices):
+            clean_price = price.replace('\n', '').strip()
+            if clean_price == '':
+                prices.pop(i)
+        return prices
+
+    @staticmethod
+    def generate_search_urls_and_extra_info():
         # initialize
         search_urls = []
         extras = []
