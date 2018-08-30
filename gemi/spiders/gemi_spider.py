@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import scrapy
 import re
+from urllib.parse import urlencode
+from collections import OrderedDict
 
 
 class GemiSpider(scrapy.Spider):
@@ -15,11 +17,65 @@ class GemiSpider(scrapy.Spider):
         }
     }
 
-    def __init__(self, urls, next_page=False,  *args, **kwargs):
+    def generate_search_urls(self):
+
+        search_urls = []
+        base_url = 'https://www.yachtworld.com/core/listing/cache/searchResults.jsp'
+
+        https: // www.yachtworld.com / core / listing / cache / searchResults.jsp?cit = true & slim = quick & ybw = & sm = 3 & searchtype = advancedsearch & Ntk = boatsEN & Ntt = & is =true & man = & ftid = 101 & enid = 101 &  & city = & pbsint = & boatsAddedSelected = -1
+
+        # default query
+        fromLength = 25
+        fromYear = 1995
+        fromPrice = 20000
+        toPrice = 8000000
+        luom = 126 # units feet, meter=127
+        currencyid = 100 # US dollar
+
+        # dynamic query
+        hull_materials ={'aliminum': 100, 'composite':101, 'fiberglass':102,
+                         'steel':103, 'wood': 104,'other':105, 'hypalon':106,
+                         'pvc':107, 'ferro-cement':108, 'carbon-fiber':110}
+        fuels = {'gas': 100, 'diesel':101, 'other':102}
+        number_of_engines = {1:100, 2: 101, 'other':102 , 'none':103 }
+        is_new = [True, False]
+
+        recently = {1:1535580789155, 3:1535407989155 , 7:1535062389155 ,14:1534457589155, 30:1533075189155, 60:1530483189155}
+
+        for day in recently:
+            for status in is_new:
+                for material in hull_materials:
+                    for fuel in fuels:
+                        for engine_number in number_of_engines:
+                            self.active_days = day
+                            self.is_new = status
+                            self.material = material
+                            self.fuel = fuel
+                            self.number_of_engines = engine_number
+
+                            search_query = {'fromLength':fromLength,
+                                            'fromPrice':fromPrice,
+                                            'toPrice':toPrice,
+                                            'luom': luom, # unit id
+                                            'currencyId': currencyid,
+                                            'is': status, # is new
+                                            'hmid':material,
+                                            'ftid':fuel,
+                                            'enid':engine_number,
+                                            'pbsint': day,
+                                            'ps':100 # entries per page
+                                            }
+                            search_url = urlencode(OrderedDict(data=base_url, search=search_query))
+                            search_urls.append(search_url)
+
+        return search_urls
+
+
+
+    def __init__(self, next_page=False,  *args, **kwargs):
         super(GemiSpider, self).__init__(*args, **kwargs)
-        self.urls = [urls]
+        self.urls = self.generate_search_urls()
         self.next_page = next_page
-        self.base_url = 'https://www.yachtworld.com'
 
     def start_requests(self):
         for url in self.urls:
@@ -27,7 +83,8 @@ class GemiSpider(scrapy.Spider):
 
     def parse(self, response):
         SEARCH_RESULTS_SELECTOR = 'div#searchResultsDetailsABTest'
-        LINK_SELECTOR = 'div.make-model a::attr(href)'
+        result_count_selector = 'div.searchResultsCount--mobile-container__searchResultsCount'
+        link_selector = 'div.make-model a::attr(href)'
         LENGTH_SELECTOR = 'div.make-model a span.length::text'
         PRICE_SELECTOR = 'div.price::text'
         LOCATION_SELECTOR = 'div.location::text'
