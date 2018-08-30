@@ -15,9 +15,10 @@ class GemiSpider(scrapy.Spider):
         }
     }
 
-    def __init__(self, urls, *args, **kwargs):
+    def __init__(self, urls, next_page=False,  *args, **kwargs):
         super(GemiSpider, self).__init__(*args, **kwargs)
         self.urls = [urls]
+        self.next_page = next_page
         self.base_url = 'https://www.yachtworld.com'
 
     def start_requests(self):
@@ -27,7 +28,6 @@ class GemiSpider(scrapy.Spider):
     def parse(self, response):
         SEARCH_RESULTS_SELECTOR = 'div#searchResultsDetailsABTest'
         LINK_SELECTOR = 'div.make-model a::attr(href)'
-        ACTIVE_FIELD_SELECTOR = 'div.make-model span.active_field::text'
         LENGTH_SELECTOR = 'div.make-model a span.length::text'
         PRICE_SELECTOR = 'div.price::text'
         LOCATION_SELECTOR = 'div.location::text'
@@ -37,7 +37,6 @@ class GemiSpider(scrapy.Spider):
 
         for ad in ads:
 
-            actives = ad.css(ACTIVE_FIELD_SELECTOR).extract()
             lengths = ad.css(LENGTH_SELECTOR).extract()
             links = ad.css(LINK_SELECTOR).extract()
             prices = ad.css(PRICE_SELECTOR).extract()
@@ -50,6 +49,13 @@ class GemiSpider(scrapy.Spider):
                 if clean_price == '':
                     prices.pop(i)
 
+            ''' sales pending feature
+            ACTIVE_FIELD_SELECTOR = 'div.make-model span.active_field::text'
+            statuses = ad.css(ACTIVE_FIELD_SELECTOR).extract()
+            if statuses is not None:
+                self.logger.info(statuses)  
+            '''
+
 
             # iterate through items
             for length, link, price, location, broker in zip(lengths, links, prices, locations, brokers):
@@ -60,6 +66,8 @@ class GemiSpider(scrapy.Spider):
                 length = " ".join(length.split())
                 location = " ".join(location.split())
                 broker = " ".join(broker.split())
+
+
                 # send the item to the pipeline
                 yield {
                     'model': model,
@@ -70,3 +78,8 @@ class GemiSpider(scrapy.Spider):
                     'broker': broker,
                     'link': link
                 }
+
+        if self.next_page == True:
+            next_button = response.css('div.searchResultsNav a.navNext::attr(href)').extract_first()
+            if next_button is not None:
+                yield response.follow(next_button, callback=self.parse)
