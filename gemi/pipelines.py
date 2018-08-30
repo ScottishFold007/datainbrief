@@ -27,17 +27,7 @@ class MongoPipeline(object):
     def close_spider(self, spider):
         self.client.close()
 
-    def get_year(self, model):
-        try:
-            year = model.split()[2]
-        except IndexError as e:
-            year = 'unknown'
-
-        return year
-
     def process_item(self, item, spider):
-        year = self.get_year(item['model'])
-        item['year'] = year
         try:
             self.db.yachts.insert_one(dict(item))
             return item

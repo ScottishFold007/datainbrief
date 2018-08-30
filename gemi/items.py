@@ -5,10 +5,17 @@
 # See documentation in:
 # https://doc.scrapy.org/en/latest/topics/items.html
 
-import scrapy
+from scrapy import Item, Field
 
 
-class GemiItem(scrapy.Item):
+class GemiItem(Item):
     # define the fields for your item here like:
-    # name = scrapy.Field()
-    pass
+    model = Field()
+    year = Field()
+    price = Field()
+    link = Field()
+    location = Field()
+    length = Field()
+    broker = Field()
+
+

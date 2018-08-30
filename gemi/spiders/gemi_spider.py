@@ -22,35 +22,51 @@ class GemiSpider(scrapy.Spider):
 
     def start_requests(self):
         for url in self.urls:
-            yield scrapy.Request(url=url, callback=self.parse)
+            yield scrapy.Request(url=url, meta={'dont_redirect': True}, callback=self.parse)
 
     def parse(self, response):
-        SET_SELECTOR = 'div#searchResultsDetailsABTest'
+        SEARCH_RESULTS_SELECTOR = 'div#searchResultsDetailsABTest'
+        LINK_SELECTOR = 'div.make-model a::attr(href)'
+        ACTIVE_FIELD_SELECTOR = 'div.make-model span.active_field::text'
+        LENGTH_SELECTOR = 'div.make-model a span.length::text'
+        PRICE_SELECTOR = 'div.price::text'
+        LOCATION_SELECTOR = 'div.location::text'
+        BROKER_SELECTOR = 'div.broker::text'
 
-        ads = response.css(SET_SELECTOR)
+        ads = response.css(SEARCH_RESULTS_SELECTOR)
 
         for ad in ads:
-            LINK_SELECTOR = 'div.make-model a::attr(href)'
-            MODEL_SELECTOR = 'div.make-model a::text'
-            LENGTH_SELECTOR = 'div.make-model a span.length::text'
-            PRICE_SELECTOR = 'div.price::text'
-            LOCATION_SELECTOR = 'div.location::text'
-            BROKER_SELECTOR = 'div.broker::text'
 
-            models = ad.css(MODEL_SELECTOR).extract()
+            actives = ad.css(ACTIVE_FIELD_SELECTOR).extract()
             lengths = ad.css(LENGTH_SELECTOR).extract()
             links = ad.css(LINK_SELECTOR).extract()
             prices = ad.css(PRICE_SELECTOR).extract()
             locations = ad.css(LOCATION_SELECTOR).extract()
             brokers = ad.css(BROKER_SELECTOR).extract()
 
+            # remove empty prices
+            for i, price in enumerate(prices):
+                clean_price = price.replace('\n', '').strip()
+                if clean_price == '':
+                    prices.pop(i)
+
+
             # iterate through items
-            for model, length, link, price, location, broker in zip(models, lengths, links, prices, locations, brokers):
+            for length, link, price, location, broker in zip(lengths, links, prices, locations, brokers):
+                # clean the fields
+                split_link = link.split('/')
+                year, model = split_link[2], split_link[3]
+                price = " ".join(price.split())
+                length = " ".join(length.split())
+                location = " ".join(location.split())
+                broker = " ".join(broker.split())
+                # send the item to the pipeline
                 yield {
-                    'model': model.replace('\n', " "),
-                    'length': " ".join(length.split()),
-                    'link': link,
-                    'price': price.replace("\n", " ").strip(),
-                    'location': location.replace("\n", " ").strip(),
-                    'broker': broker.replace("\n", " ").strip()
+                    'model': model,
+                    'year': year,
+                    'length': length,
+                    'price': price,
+                    'location': location,
+                    'broker': broker,
+                    'link': link
                 }
