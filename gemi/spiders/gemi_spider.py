@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import scrapy
+import re
 
 
 class GemiSpider(scrapy.Spider):
@@ -29,24 +30,25 @@ class GemiSpider(scrapy.Spider):
         ads = response.css(SET_SELECTOR)
 
         for ad in ads:
-
-            NAME_SELECTOR = 'div.make-model::text'
-            LINK_SELECTOR = 'div.image-container a::attr(href)'
+            LINK_SELECTOR = 'div.make-model a::attr(href)'
+            MODEL_SELECTOR = 'div.make-model a::text'
+            LENGTH_SELECTOR = 'div.make-model a span.length::text'
             PRICE_SELECTOR = 'div.price::text'
             LOCATION_SELECTOR = 'div.location::text'
             BROKER_SELECTOR = 'div.broker::text'
 
-            names = ad.css(NAME_SELECTOR).extract()
+            models = ad.css(MODEL_SELECTOR).extract()
+            lengths = ad.css(LENGTH_SELECTOR).extract()
             links = ad.css(LINK_SELECTOR).extract()
             prices = ad.css(PRICE_SELECTOR).extract()
             locations = ad.css(LOCATION_SELECTOR).extract()
             brokers = ad.css(BROKER_SELECTOR).extract()
 
             # iterate through items
-            for name, link, price, location, broker in zip(names, links, prices, locations, brokers):
-                link = self.base_url + link
+            for model, length, link, price, location, broker in zip(models, lengths, links, prices, locations, brokers):
                 yield {
-                    'title': name.strip(),
+                    'model': model.replace('\n', " "),
+                    'length': " ".join(length.split()),
                     'link': link,
                     'price': price.replace("\n", " ").strip(),
                     'location': location.replace("\n", " ").strip(),

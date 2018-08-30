@@ -27,16 +27,19 @@ class MongoPipeline(object):
     def close_spider(self, spider):
         self.client.close()
 
-    def get_year_and_length_from_the_title(self,title):
-        return ('unknown', 'unknown')
+    def get_year(self, model):
+        try:
+            year = model.split()[2]
+        except IndexError as e:
+            year = 'unknown'
+
+        return year
 
     def process_item(self, item, spider):
-        year, length = self.get_year_and_length_from_the_title(item['title'])
+        year = self.get_year(item['model'])
         item['year'] = year
-        item['length'] = length
         try:
             self.db.yachts.insert_one(dict(item))
             return item
         except DuplicateKeyError:
             return 'duplicate item'
-
