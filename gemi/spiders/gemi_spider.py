@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import scrapy
-import re
 from urllib.parse import urlencode
 from collections import OrderedDict
 
@@ -44,7 +43,7 @@ class GemiSpider(scrapy.Spider):
         self.process_search_results(search_results, extra_info)
 
         # follow to the next page
-        if self.next_page == True:
+        if self.next_page:
             next_button = response.css('div.searchResultsNav a.navNext::attr(href)').extract_first()
             if next_button is not None:
                 yield response.follow(next_button, callback=self.parse)
@@ -132,7 +131,7 @@ class GemiUtil(object):
         currencyid = 100  # US dollar
 
         # dynamic query parameters
-        hull_materials = {'aliminum': 100, 'composite': 101, 'fiberglass': 102,
+        hull_materials = {'aluminium': 100, 'composite': 101, 'fiberglass': 102,
                           'steel': 103, 'wood': 104, 'other': 105, 'hypalon': 106,
                           'pvc': 107, 'ferro-cement': 108, 'carbon-fiber': 110}
         fuels = {'gas': 100, 'diesel': 101, 'other': 102}
