@@ -138,11 +138,28 @@ class GemiUtil(object):
         fuels = {'gas': 100, 'diesel': 101, 'other': 102}
         number_of_engines = {1: 100, 2: 101, 'other': 102, 'none': 103}
         is_new = [True, False]
-        recently = {1: 1535580789155, 3: 1535407989155, 7: 1535062389155, 14: 1534457589155, 30: 1533075189155,
+        within_x_days = {1: 1535580789155, 3: 1535407989155, 7: 1535062389155, 14: 1534457589155, 30: 1533075189155,
                     60: 1530483189155}
+        recent_day = new_or_used = material = fuel = engine_number = 'unknown'
+
+        if daily_search:
+            args = {'recent_day': within_x_days[1], 'within_x_days': within_x_days, 'is_new': is_new, 'hull_materials':hull_materials,
+                'fuels':fuels, 'number_of_engines':number_of_engines}
+        else:
+            args = {'recent_day': recent_day, 'within_x_days': within_x_days, 'is_new': is_new, 'hull_materials':hull_materials,
+                'fuels':fuels, 'number_of_engines':number_of_engines}
+
+        GemiUtil.generate_dynamic_queries(**args)
+
+    @staticmethod
+    def generate_dynamic_queries(within_x_days = None, is_new = None, hull_materials = None,
+                fuels=None, number_of_engines= None ):
 
         # generate dynamic queries
-        for recent_day, new_or_used, material, fuel, engine_number in product(recently, is_new, hull_materials, fuels, number_of_engines):
+        for recent_day, new_or_used, material, fuel, engine_number in product(
+                within_x_days, is_new, hull_materials,
+                fuels, number_of_engines):
+
             extra_info = {'days': recent_day, 'is_new': new_or_used,
                           'material': material, 'fuel': fuel, 'number_of_engines': engine_number}
 
