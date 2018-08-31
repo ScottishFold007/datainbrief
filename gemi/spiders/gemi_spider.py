@@ -56,6 +56,7 @@ class GemiSpider(scrapy.Spider):
         price_selector = 'div.price::text'
         location_selector = 'div.location::text'
         broker_selector = 'div.broker::text'
+        sales_status_selector = 'div.make-model span.active_field::text'
 
         ''' sales pending feature
         ACTIVE_FIELD_SELECTOR = 'div.make-model span.active_field::text'
@@ -78,13 +79,15 @@ class GemiSpider(scrapy.Spider):
     def process_items(self,lengths, links, prices, locations, brokers, extra_info)
         # iterate through items
         for length, link, price, location, broker in zip(lengths, links, prices, locations, brokers):
-            # clean the fields
+
+            # get the year and model from the link
             split_link = link.split('/')
             year, model = split_link[2], split_link[3]
-            price = " ".join(price.split())
-            length = " ".join(length.split())
-            location = " ".join(location.split())
-            broker = " ".join(broker.split())
+
+            # clean the fields
+            cleaned_fields = list(map(lambda field: " ".join(field.split()), [price, length, location, broker]))
+            price, length, location, broker = cleaned_fields
+
 
             # send the item to the pipeline
             yield {
@@ -106,7 +109,7 @@ class GemiSpider(scrapy.Spider):
 class GemiUtil(object):
 
     @staticmethod
-    def remove_empty_prices(self, prices):
+    def remove_empty_prices(prices):
         for i, price in enumerate(prices):
             clean_price = price.replace('\n', '').strip()
             if clean_price == '':
