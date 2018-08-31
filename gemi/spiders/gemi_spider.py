@@ -2,6 +2,7 @@
 import scrapy
 from urllib.parse import urlencode
 from collections import OrderedDict
+from itertools import product
 
 
 class GemiSpider(scrapy.Spider):
@@ -141,30 +142,26 @@ class GemiUtil(object):
                     60: 1530483189155}
 
         # generate dynamic queries
-        for recent_day in recently:
-            for new_or_used in is_new:
-                for material in hull_materials:
-                    for fuel in fuels:
-                        for engine_number in number_of_engines:
-                            extra_info = {'days': recent_day, 'is_new': new_or_used,
-                                          'material': material, 'fuel': fuel, 'number_of_engines': engine_number}
+        for recent_day, new_or_used, material, fuel, engine_number in product(recently, is_new, hull_materials, fuels, number_of_engines):
+            extra_info = {'days': recent_day, 'is_new': new_or_used,
+                          'material': material, 'fuel': fuel, 'number_of_engines': engine_number}
 
-                            search_query = {'fromLength': fromLength,
-                                            'fromYear': fromYear,
-                                            'fromPrice': fromPrice,
-                                            'toPrice': toPrice,
-                                            'luom': luom,  # unit id
-                                            'currencyId': currencyid,
-                                            'is': new_or_used,
-                                            'hmid': material,
-                                            'ftid': fuel,
-                                            'enid': engine_number,
-                                            'pbsint': recent_day,
-                                            'ps': 100  # entries per page
-                                            }
+            search_query = {'fromLength': fromLength,
+                            'fromYear': fromYear,
+                            'fromPrice': fromPrice,
+                            'toPrice': toPrice,
+                            'luom': luom,  # unit id
+                            'currencyId': currencyid,
+                            'is': new_or_used,
+                            'hmid': material,
+                            'ftid': fuel,
+                            'enid': engine_number,
+                            'pbsint': recent_day,
+                            'ps': 100  # entries per page
+                            }
 
-                            search_url = urlencode(OrderedDict(data=base_url, search=search_query))
-                            search_urls.append(search_url)
-                            extras.append(extra_info)
+            search_url = urlencode(OrderedDict(data=base_url, search=search_query))
+            search_urls.append(search_url)
+            extras.append(extra_info)
 
         return search_urls, extras
