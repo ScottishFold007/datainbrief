@@ -143,17 +143,8 @@ class GemiUtil(object):
         recent_day = new_or_used = material = fuel = engine_number = 'unknown'
 
         if daily_search:
-            args = {'recent_day': within_x_days[1], 'within_x_days': within_x_days, 'is_new': is_new, 'hull_materials':hull_materials,
-                'fuels':fuels, 'number_of_engines':number_of_engines}
-        else:
-            args = {'recent_day': recent_day, 'within_x_days': within_x_days, 'is_new': is_new, 'hull_materials':hull_materials,
-                'fuels':fuels, 'number_of_engines':number_of_engines}
+            within_x_days = {1: 1535580789155 }
 
-        GemiUtil.generate_dynamic_queries(**args)
-
-    @staticmethod
-    def generate_dynamic_queries(within_x_days = None, is_new = None, hull_materials = None,
-                fuels=None, number_of_engines= None ):
 
         # generate dynamic queries
         for recent_day, new_or_used, material, fuel, engine_number in product(
@@ -169,6 +160,7 @@ class GemiUtil(object):
                             'toPrice': toPrice,
                             'luom': luom,  # unit id
                             'currencyId': currencyid,
+
                             'is': new_or_used,
                             'hmid': material,
                             'ftid': fuel,
