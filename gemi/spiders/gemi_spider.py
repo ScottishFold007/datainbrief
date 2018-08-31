@@ -75,7 +75,7 @@ class GemiSpider(scrapy.Spider):
 
             self.process_items(lengths, links, prices, locations, brokers, extra_info)
 
-    def process_items(self,lengths, links, prices, locations, brokers, extra_info)
+    def process_items(self,lengths, links, prices, locations, brokers, extra_info):
         # iterate through items
         for length, link, price, location, broker in zip(lengths, links, prices, locations, brokers):
 
@@ -146,7 +146,7 @@ class GemiUtil(object):
                 for material in hull_materials:
                     for fuel in fuels:
                         for engine_number in number_of_engines:
-                            extra_info = {'days': recent_day, 'is_new': status,
+                            extra_info = {'days': recent_day, 'is_new': new_or_used,
                                           'material': material, 'fuel': fuel, 'number_of_engines': engine_number}
 
                             search_query = {'fromLength': fromLength,
