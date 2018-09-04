@@ -17,16 +17,17 @@ class GemiSpider(scrapy.Spider):
         }
     }
     # entry point
-    def __init__(self, next_page=False, *args, **kwargs):
+    def __init__(self, next_page=False, details=False *args, **kwargs):
         super(GemiSpider, self).__init__(*args, **kwargs)
-        self.urls, self.extra_info = GemiUtil.generate_search_urls_and_extra_info()
+        self.base_url = 'https://www.yachtworld.com'
+        self.urls = GemiUtil.generate_base_query_url()
         self.next_page = next_page
+        self.should_get_details = details
 
 
     def start_requests(self):
-        for url, extra_info_for_query in zip(self.urls, self.extra_info):
+        for url in self.urls:
             yield scrapy.Request(url=url,
-                                 meta={'extra_info': extra_info_for_query},
                                  callback=self.parse)
 
 
@@ -39,9 +40,8 @@ class GemiSpider(scrapy.Spider):
         # define the data to process
         search_results = response.css(search_results_table_selector)
         result_count = response.css(result_count_selector).extract()
-        extra_info = response.meta['extra_info']
 
-        self.process_search_results(search_results, extra_info)
+        self.process_search_results(search_results)
 
         # follow to the next page
         if self.next_page:
@@ -50,35 +50,35 @@ class GemiSpider(scrapy.Spider):
                 yield response.follow(next_button, callback=self.parse)
 
 
-    def process_search_results(self, search_results, extra_info):
+    def process_search_results(self, search_results):
+        for page in search_results:
+            lengths, links, prices, locations, brokers = self.extract_ads(page)
+            self.process_items(lengths, links, prices, locations, brokers)
+
+
+    def extract_ads(self, page):
         link_selector = 'div.make-model a::attr(href)'
         length_selector = 'div.make-model a span.length::text'
         price_selector = 'div.price::text'
         location_selector = 'div.location::text'
         broker_selector = 'div.broker::text'
-        sales_status_selector = 'div.make-model span.active_field::text'
 
-        ''' sales pending feature
-        ACTIVE_FIELD_SELECTOR = 'div.make-model span.active_field::text'
-        statuses = ad.css(ACTIVE_FIELD_SELECTOR).extract()
-        if statuses is not None:
-            self.logger.info(statuses)  
-        '''
+        lengths = page.css(length_selector).extract()
+        links = page.css(link_selector).extract()
+        prices = page.css(price_selector).extract()
+        locations = page.css(location_selector).extract()
+        brokers = page.css(broker_selector).extract()
+        # remove empty prices
+        prices = GemiUtil.remove_empty_prices(prices)
 
-        for ad in search_results:
-            lengths = ad.css(length_selector).extract()
-            links = ad.css(link_selector).extract()
-            prices = ad.css(price_selector).extract()
-            locations = ad.css(location_selector).extract()
-            brokers = ad.css(broker_selector).extract()
-            # remove empty prices
-            prices = GemiUtil.remove_empty_prices(prices)
+        return lengths, links, prices, locations, brokers
 
-            self.process_items(lengths, links, prices, locations, brokers, extra_info)
 
-    def process_items(self,lengths, links, prices, locations, brokers, extra_info):
+
+    def process_items(self,lengths, links, prices, locations, brokers):
         # iterate through items
         for length, link, price, location, broker in zip(lengths, links, prices, locations, brokers):
+            
 
             # get the year and model from the link
             split_link = link.split('/')
@@ -88,22 +88,42 @@ class GemiSpider(scrapy.Spider):
             cleaned_fields = list(map(lambda field: " ".join(field.split()), [price, length, location, broker]))
             price, length, location, broker = cleaned_fields
 
+             
+            # make the link clickable
+            link = self.base_url + link
 
-            # send the item to the pipeline
-            yield {
-                'model': model,
-                'year': year,
-                'length': length,
-                'price': price,
-                'location': location,
-                'broker': broker,
-                'link': link,
-                'is_new': extra_info['new_or_used'],
-                'active_days': extra_info['day'],
-                'material': extra_info['material'],
-                'fuel': extra_info['fuel'],
-                'number of engines': extra_info['engine_number']
-            }
+            # go to the item page to get details
+            if self.should_get_details == True:
+
+                # send a request to the details page
+                yield scrapy.Request(
+                    link, 
+                    callback = self.parseCoordinates,
+                    meta = {
+                            'model': model,
+                            'year': year,
+                            'length': length,
+                            'price': price,
+                            'location': location,
+                            'broker': broker,
+                            'link': link
+                    }
+                )
+            else: 
+                # send the item to the pipeline
+                yield {
+                    'model': model,
+                    'year': year,
+                    'length': length,
+                    'price': price,
+                    'location': location,
+                    'broker': broker,
+                    'link': link
+                }
+            
+
+
+
 
 
 class GemiUtil(object):
@@ -117,10 +137,7 @@ class GemiUtil(object):
         return prices
 
     @staticmethod
-    def generate_search_urls_and_extra_info():
-        # initialize
-        search_urls = []
-        extras = []
+    def generate_base_query_url():
         base_url = 'https://www.yachtworld.com/core/listing/cache/searchResults.jsp'
 
         # default query
@@ -130,6 +147,31 @@ class GemiUtil(object):
         toPrice = 8000000
         luom = 126  # units feet, meter=127
         currencyid = 100  # US dollar
+
+        base_query = {
+                        'fromLength': fromLength,
+                        'fromYear': fromYear,
+                        'fromPrice': fromPrice,
+                        'toPrice': toPrice,
+                        'luom': luom,  # unit id
+                        'currencyId': currencyid,
+                        'ps': 100  # entries per page
+
+                    }
+
+        base_query_url = urlencode(OrderedDict(data=base_url, search=base_query))
+
+        return list(base_query_url)
+
+
+
+    # LATER
+    @staticmethod # broken, take a look
+    def generate_search_urls_and_extra_info():
+        # initialize
+        search_urls = []
+        extras = []
+
 
         # dynamic query parameters
         hull_materials = {'aluminium': 100, 'composite': 101, 'fiberglass': 102,
@@ -154,19 +196,12 @@ class GemiUtil(object):
             extra_info = {'days': recent_day, 'is_new': new_or_used,
                           'material': material, 'fuel': fuel, 'number_of_engines': engine_number}
 
-            search_query = {'fromLength': fromLength,
-                            'fromYear': fromYear,
-                            'fromPrice': fromPrice,
-                            'toPrice': toPrice,
-                            'luom': luom,  # unit id
-                            'currencyId': currencyid,
-
+            detailed_query = {
                             'is': new_or_used,
                             'hmid': material,
                             'ftid': fuel,
                             'enid': engine_number,
                             'pbsint': recent_day,
-                            'ps': 100  # entries per page
                             }
 
             search_url = urlencode(OrderedDict(data=base_url, search=search_query))
