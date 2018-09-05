@@ -30,10 +30,17 @@ class GemiSpider(scrapy.Spider):
         self.should_get_details = details  # parse details page
         self.daily_search = daily_search  # search recent day only
 
-        self.start_urls = []
+        self.start_urls = [
+            "https://www.yachtworld.com/core/listing/cache/searchResults.jsp?fromLength=25&toLength=&fromYear=1995&toYear=&fromPrice=20000&toPrice=8000000&luom=126&currencyid=100&ps=50"]
 
         # after the query is generated, start_requests is called automatically
-        self.generate_base_query_url()
+        # self.generate_base_query_url()
+
+    def start_requests(self):
+        for url in self.start_urls:
+            self.logger.info('%s\n\n\n' % url)
+
+            yield scrapy.Request(url=url, callback=self.parse)
 
     def generate_base_query_url(self):
         # default query
@@ -56,9 +63,8 @@ class GemiSpider(scrapy.Spider):
 
         self.start_urls = [base_query_url]
 
-        self.logger.info('%s\n\n\n' % self.start_urls)
-
     def parse(self, response):
+        self.logger.info('%s\n\n\n' % self.start_urls)
 
         self.logger.info('%s\n\n\n' % response)
 
