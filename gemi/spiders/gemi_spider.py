@@ -20,42 +20,48 @@ class GemiSpider(scrapy.Spider):
     # entry point
     def __init__(self, next_page=False, details=False, daily_search=False, *args, **kwargs):
         super(GemiSpider, self).__init__(*args, **kwargs)
+        # basics
         self.base_url = 'https://www.yachtworld.com'
         self.base_query = dict()
         self.base_search_query_url = 'https://www.yachtworld.com/core/listing/cache/searchResults.jsp'
 
-        self.urls = self.generate_base_query_url()
-
+        # control knobs
         self.next_page = next_page  # follow to the next pages
         self.should_get_details = details  # parse details page
         self.daily_search = daily_search  # search recent day only
 
-    def generate_base_query_url(self):
+        self.start_urls = []
 
+        # after the query is generated, start_requests is called automatically
+        self.generate_base_query_url()
+
+    def generate_base_query_url(self):
         # default query
         self.base_query = {
             'fromLength': 25,
+            'toLength': '',
             'fromYear': 1995,
+            'toYear': '',
             'fromPrice': 20000,
             'toPrice': 8000000,
             'luom': 126,  # units feet, meter=127
-            'currencyId': 100,  # US dollar
+            'currencyid': 100,  # US dollar
             'ps': 50  # entries per page
         }
-
         if self.daily_search:
             self.base_query['pbsint'] = 1535580789155  # 1 day
 
-        base_query_url = urlencode(OrderedDict(data=self.base_search_query_url, search=self.base_query))
+        base_query_string = urlencode(self.base_query, 'utf-8')
+        base_query_url = self.base_search_query_url + '?' + base_query_string
 
-        return list(base_query_url)
+        self.start_urls = [base_query_url]
 
-    def start_requests(self):
-        for url in self.urls:
-            yield scrapy.Request(url=url,
-                                 callback=self.parse)
+        self.logger.info('%s\n\n\n' % self.start_urls)
 
     def parse(self, response):
+
+        self.logger.info('%s\n\n\n' % response)
+
         # selectors
         search_results_table_selector = 'div#searchResultsDetailsABTest'
         result_count_selector = 'div.searchResultsCount--mobile-container__searchResultsCount'
@@ -64,18 +70,15 @@ class GemiSpider(scrapy.Spider):
         search_results = response.css(search_results_table_selector)
         # result_count = response.css(result_count_selector).extract()
 
-        self.process_search_results(search_results)
+        for page in search_results:
+            lengths, links, prices, locations, brokers = self.extract_ads(page)
+            self.process_items(lengths, links, prices, locations, brokers, page)
 
         # follow to the next page
         if self.next_page:
             next_button = response.css('div.searchResultsNav a.navNext::attr(href)').extract_first()
             if next_button is not None:
                 yield response.follow(next_button, callback=self.parse)
-
-    def process_search_results(self, search_results):
-        for page in search_results:
-            lengths, links, prices, locations, brokers = self.extract_ads(page)
-            self.process_items(lengths, links, prices, locations, brokers, page)
 
     @staticmethod
     def extract_ads(page):
