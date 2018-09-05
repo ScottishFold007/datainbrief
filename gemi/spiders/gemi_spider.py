@@ -21,21 +21,39 @@ class GemiSpider(scrapy.Spider):
     def __init__(self, next_page=False, details=False, daily_search=False, *args, **kwargs):
         super(GemiSpider, self).__init__(*args, **kwargs)
         self.base_url = 'https://www.yachtworld.com'
+        self.base_query = dict()
         self.base_search_query_url = 'https://www.yachtworld.com/core/listing/cache/searchResults.jsp'
 
-        self.urls = self.generate_base_query_url()  
+        self.urls = self.generate_base_query_url()
 
-        self.next_page = next_page # follow to the next pages 
-        self.should_get_details = details # parse details page
-        self.daily_search = daily_search # search recent day only 
+        self.next_page = next_page  # follow to the next pages
+        self.should_get_details = details  # parse details page
+        self.daily_search = daily_search  # search recent day only
 
+    def generate_base_query_url(self):
+
+        # default query
+        self.base_query = {
+            'fromLength': 25,
+            'fromYear': 1995,
+            'fromPrice': 20000,
+            'toPrice': 8000000,
+            'luom': 126,  # units feet, meter=127
+            'currencyId': 100,  # US dollar
+            'ps': 50  # entries per page
+        }
+
+        if self.daily_search:
+            self.base_query['pbsint'] = 1535580789155  # 1 day
+
+        base_query_url = urlencode(OrderedDict(data=self.base_search_query_url, search=self.base_query))
+
+        return list(base_query_url)
 
     def start_requests(self):
         for url in self.urls:
             yield scrapy.Request(url=url,
                                  callback=self.parse)
-
-
 
     def parse(self, response):
         # selectors
@@ -44,7 +62,7 @@ class GemiSpider(scrapy.Spider):
 
         # define the data to process
         search_results = response.css(search_results_table_selector)
-        result_count = response.css(result_count_selector).extract()
+        # result_count = response.css(result_count_selector).extract()
 
         self.process_search_results(search_results)
 
@@ -54,36 +72,35 @@ class GemiSpider(scrapy.Spider):
             if next_button is not None:
                 yield response.follow(next_button, callback=self.parse)
 
-
     def process_search_results(self, search_results):
         for page in search_results:
             lengths, links, prices, locations, brokers = self.extract_ads(page)
-            self.process_items(lengths, links, prices, locations, brokers)
+            self.process_items(lengths, links, prices, locations, brokers, page)
 
-
-    def extract_ads(self, page):
+    @staticmethod
+    def extract_ads(page):
+        # selectors
         link_selector = 'div.make-model a::attr(href)'
         length_selector = 'div.make-model a span.length::text'
         price_selector = 'div.price::text'
         location_selector = 'div.location::text'
         broker_selector = 'div.broker::text'
 
+        # parse fields
         lengths = page.css(length_selector).extract()
         links = page.css(link_selector).extract()
         prices = page.css(price_selector).extract()
         locations = page.css(location_selector).extract()
         brokers = page.css(broker_selector).extract()
+
         # remove empty prices
         prices = GemiUtil.remove_empty_prices(prices)
 
         return lengths, links, prices, locations, brokers
 
-
-
-    def process_items(self,lengths, links, prices, locations, brokers):
+    def process_items(self, lengths, links, prices, locations, brokers, page):
         # iterate through items
         for length, link, price, location, broker in zip(lengths, links, prices, locations, brokers):
-            
 
             # get the year and model from the link
             split_link = link.split('/')
@@ -93,92 +110,50 @@ class GemiSpider(scrapy.Spider):
             cleaned_fields = list(map(lambda field: " ".join(field.split()), [price, length, location, broker]))
             price, length, location, broker = cleaned_fields
 
-             
             # make the link clickable
             link = self.base_url + link
 
-            # go to the item page to get details
-            if self.should_get_details == True:
+            basic_fields = {
+                'model': model,
+                'year': year,
+                'length': length,
+                'price': price,
+                'location': location,
+                'broker': broker,
+                'link': link
+            }
 
+            # go to the item page to get details
+            if self.should_get_details:
                 # send a request to the details page
                 yield scrapy.Request(
-                    link, 
-                    callback = self.parseDetails,
-                    meta = {
-                            'model': model,
-                            'year': year,
-                            'length': length,
-                            'price': price,
-                            'location': location,
-                            'broker': broker,
-                            'link': link
-                    }
+                    link,
+                    callback=self.parse_details(page=page),
+                    meta=basic_fields
                 )
-            else: 
+            else:
                 # send the item to the pipeline
-                yield {
-                    'model': model,
-                    'year': year,
-                    'length': length,
-                    'price': price,
-                    'location': location,
-                    'broker': broker,
-                    'link': link
-                }
-            
+                yield basic_fields
 
-    def parseDetails(self, response):
+    @staticmethod
+    def parse_details(response, page):
         detail_selector = 'div.boatdetails::text'
         full_spec_selector = 'div.fullspecs::text'
 
         # parse fields
         details = page.css(detail_selector).extract()
-        fullspecs = page.css(full_spec_selector).extract()
+        full_specs = page.css(full_spec_selector).extract()
 
         # add field to dict
-        response.meta['fullspecs'] = fullspecs
+        response.meta['full_specs'] = full_specs
         response.meta['details'] = details
 
         # send the item info to the pipeline
         yield response.meta
 
-        
-
-
-    def generate_base_query_url(self):
-
-        # default query
-        fromLength = 25
-        fromYear = 1995
-        fromPrice = 20000
-        toPrice = 8000000
-        luom = 126  # units feet, meter=127
-        currencyid = 100  # US dollar
-
-
-
-        self.base_query = {
-                        'fromLength': fromLength,
-                        'fromYear': fromYear,
-                        'fromPrice': fromPrice,
-                        'toPrice': toPrice,
-                        'luom': luom,  # unit id
-                        'currencyId': currencyid,
-                        'ps': 50  # entries per page
-                    }
-
-        if self.daily_search:
-            base_query['pbsint'] = 1535580789155 # 1 day
-
-        base_query_url = urlencode(OrderedDict(data=self.base_search_query_url, search=base_query))
-
-        return list(base_query_url)
-
-
     def add_extra_query_parameters(self):
         # initialize
         search_urls = list()
-
 
         # dynamic query parameters
         hull_materials = {'aluminium': 100, 'composite': 101, 'fiberglass': 102,
@@ -188,20 +163,18 @@ class GemiSpider(scrapy.Spider):
         number_of_engines = {1: 100, 2: 101, 'other': 102, 'none': 103}
         is_new = [True, False]
         within_x_days = {1: 1535580789155, 3: 1535407989155, 7: 1535062389155, 14: 1534457589155, 30: 1533075189155,
-                    60: 1530483189155}
-
+                         60: 1530483189155}
 
         # generate dynamic queries
         for recent_day, new_or_used, material, fuel, engine_number in product(
                 within_x_days, is_new, hull_materials,
                 fuels, number_of_engines):
-
-            extra_query_parameters = {  'is': new_or_used,
-                            'hmid': material,
-                            'ftid': fuel,
-                            'enid': engine_number,
-                            'pbsint': recent_day
-                            }
+            extra_query_parameters = {'is': new_or_used,
+                                      'hmid': material,
+                                      'ftid': fuel,
+                                      'enid': engine_number,
+                                      'pbsint': recent_day
+                                      }
 
             # add new parameters to the search url 
             search_url = urlencode(OrderedDict(data=self.base_query_url, search=extra_query_parameters))
@@ -209,12 +182,6 @@ class GemiSpider(scrapy.Spider):
             search_urls.append(search_url)
 
         return search_urls
-
-
-
-
-
-
 
 
 class GemiUtil(object):
@@ -226,5 +193,3 @@ class GemiUtil(object):
             if clean_price == '':
                 prices.pop(i)
         return prices
-
-
