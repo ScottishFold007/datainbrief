@@ -33,9 +33,13 @@ class GemiSpider(scrapy.Spider):
         # record processed items
         self.links_seen = set()
 
+        self.start_urls, self.days = self.generate_base_query_urls()
 
     # query generator
     def generate_base_query_urls(self):
+        urls = list()
+        days = list()
+
         # default query
         self.base_query_parameters = {
             'fromLength': 25,
@@ -62,11 +66,14 @@ class GemiSpider(scrapy.Spider):
             self.base_query_parameters['pbsint'] = pbsint
             query_string = urlencode(self.base_query_parameters, 'utf-8')
             query_url = self.root_search_url + '?' + query_string
-            yield query_url, day
+            urls.append(query_url)
+            days.append(day)
+
+        return urls, days
 
     # Send urls to parse
     def start_requests(self):
-        for url, day in self.generate_base_query_urls():
+        for url, day in self.start_urls, self.days:
             yield scrapy.Request(url=url, meta={'days-past-since-added': day}, callback=self.parse)
 
     def parse(self, response):
@@ -108,7 +115,6 @@ class GemiSpider(scrapy.Spider):
 
                 link_to_the_item_details, basic_fields = self.get_basic_fields(length, link, price, location, broker)
                 basic_fields['added_within_x_days'] = added_since
-
 
                 # go to the item page to get details
                 if self.should_get_details:
