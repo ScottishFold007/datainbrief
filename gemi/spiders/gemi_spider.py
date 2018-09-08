@@ -92,7 +92,10 @@ class GemiSpider(scrapy.Spider):
         # result_count_selector = 'div.searchResultsCount--mobile-container__searchResultsCount'
         # result_count = response.css(result_count_selector).extract()
 
-        added_since = response.meta['days-since-added']
+        try:
+            added_since = response.meta['days-past-since-added']
+        except KeyError:
+            added_since = 'unknown'
 
         for page in search_results:
             # parse fields
