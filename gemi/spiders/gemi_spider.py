@@ -73,7 +73,7 @@ class GemiSpider(scrapy.Spider):
 
     # Send urls to parse
     def start_requests(self):
-        for url, day in self.start_urls, self.days:
+        for url, day in zip(self.start_urls, self.days):
             yield scrapy.Request(url=url, meta={'days-past-since-added': day}, callback=self.parse)
 
     def parse(self, response):
