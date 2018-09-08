@@ -1,3 +1,2 @@
 Scrapy
 pymongo
-urllib.parse
