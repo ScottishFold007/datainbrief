@@ -13,7 +13,8 @@ class GemiSpider(scrapy.Spider):
     # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
     custom_settings = {
         'ITEM_PIPELINES': {
-            'gemi.pipelines.MongoPipeline': 300,  # pipeline with smaller number executed first
+            'gemi.pipelines.DuplicatesPipeline': 200,  # the number in range 0-1000
+            'gemi.pipelines.MongoPipeline': 300  # pipeline with smaller number executed first
         }
     }
 
@@ -30,15 +31,12 @@ class GemiSpider(scrapy.Spider):
         self.should_get_details = details  # parse details page
         self.daily_search = daily_search  # search recent day only
 
-        # after the query is generated, start_requests is called automatically
-        self.start_urls = self.generate_base_query_urls()
-
     def start_requests(self):
-        for url in self.start_urls:
-            yield scrapy.Request(url=url, callback=self.parse)
+        for url, day in self.generate_base_query_urls():
+            yield scrapy.Request(url=url, meta={'days-since-added': day}, callback=self.parse)
 
+    # query generator
     def generate_base_query_urls(self):
-        urls = list()
         # default query
         self.base_query_parameters = {
             'fromLength': 25,
@@ -55,18 +53,16 @@ class GemiSpider(scrapy.Spider):
         within_x_days = {1: 1535580789155, 3: 1535407989155, 7: 1535062389155, 14: 1534457589155, 30: 1533075189155,
                          60: 1530483189155}
 
-
         if self.daily_search:
             self.base_query_parameters['pbsint'] = within_x_days[1]  # 1 day
 
-        for day in within_x_days:
-            self.base_query_parameters['pbsint'] = day
+        for day, pbsint in within_x_days.items():
+            self.base_query_parameters['pbsint'] = pbsint
 
             query_string = urlencode(self.base_query_parameters, 'utf-8')
             query_url = self.root_search_url + '?' + query_string
-            urls.append(query_url)
 
-        return urls
+            yield query_url, day
 
     def parse(self, response):
         # table selectors
@@ -83,6 +79,8 @@ class GemiSpider(scrapy.Spider):
         search_results = response.css(search_results_table_selector)
         # result_count = response.css(result_count_selector).extract()
 
+        added_since = response.meta['days-since-added']
+
         for page in search_results:
             # parse fields
             lengths = page.css(length_selector).extract()
@@ -94,10 +92,10 @@ class GemiSpider(scrapy.Spider):
             # remove empty prices
             prices = GemiUtil.remove_empty_prices(prices)
 
-
             for length, link, price, location, broker in zip(lengths, links, prices, locations, brokers):
 
-                link_to_the_item_details, basic_fields = self.get_basic_fields(length, link, price, location, broker)
+                link_to_the_item_details, basic_fields = self.get_basic_fields(length, link, price, location, broker,
+                                                                               added_since)
 
                 # go to the item page to get details
                 if self.should_get_details:
@@ -115,9 +113,9 @@ class GemiSpider(scrapy.Spider):
         if self.next_page:
             next_button = response.css('div.searchResultsNav a.navNext::attr(href)').extract_first()
             if next_button is not None:
-                yield response.follow(next_button, callback=self.parse)
+                yield response.follow(next_button, meta=response.meta, callback=self.parse)
 
-    def get_basic_fields(self, length, link, price, location, broker):
+    def get_basic_fields(self, length, link, price, location, broker, added_since):
 
         # get the year and model from the link
         split_link = link.split('/')
@@ -137,7 +135,8 @@ class GemiSpider(scrapy.Spider):
             'price': price,
             'location': location,
             'broker': broker,
-            'link': link_to_the_item_details
+            'link': link_to_the_item_details,
+            'added_since': added_since
         }
 
         return link_to_the_item_details, basic_fields
@@ -176,7 +175,6 @@ class GemiSpider(scrapy.Spider):
         for recent_day, new_or_used, material, fuel, engine_number in product(
                 within_x_days, is_new, hull_materials,
                 fuels, number_of_engines):
-
             extra_query_parameters = {'is': new_or_used,
                                       'hmid': material,
                                       'ftid': fuel,
