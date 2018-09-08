@@ -50,8 +50,10 @@ class GemiSpider(scrapy.Spider):
             'ps': 50  # entries per page
         }
 
-        within_x_days = {1: 1535580789155, 3: 1535407989155, 7: 1535062389155, 14: 1534457589155, 30: 1533075189155,
-                         60: 1530483189155}
+        within_x_days = [ (1: 1535580789155), (3: 1535407989155), (7: 1535062389155),
+                          (14: 1534457589155), (30: 1533075189155), (60: 1530483189155) ]
+
+        within_x_days = OrderedDict(within_x_days)
 
         if self.daily_search:
             self.base_query_parameters['pbsint'] = within_x_days[1]  # 1 day
