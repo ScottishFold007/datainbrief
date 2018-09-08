@@ -33,9 +33,6 @@ class GemiSpider(scrapy.Spider):
         # record processed items
         self.links_seen = set()
 
-    def start_requests(self):
-        for url, day in self.generate_base_query_urls():
-            yield scrapy.Request(url=url, meta={'days-since-added': day}, callback=self.parse)
 
     # query generator
     def generate_base_query_urls(self):
@@ -66,10 +63,14 @@ class GemiSpider(scrapy.Spider):
             query_url = self.root_search_url + '?' + query_string
             yield query_url, day
 
+    # Send urls to parse
+    def start_requests(self):
+        for url, day in self.generate_base_query_urls():
+            yield scrapy.Request(url=url, meta={'days-since-added': day}, callback=self.parse)
+
     def parse(self, response):
         # table selectors
         search_results_table_selector = 'div#searchResultsDetailsABTest'
-        result_count_selector = 'div.searchResultsCount--mobile-container__searchResultsCount'
         # field selectors
         link_selector = 'div.make-model a::attr(href)'
         length_selector = 'div.make-model a span.length::text'
@@ -79,6 +80,8 @@ class GemiSpider(scrapy.Spider):
 
         # define the data to process
         search_results = response.css(search_results_table_selector)
+
+        # result_count_selector = 'div.searchResultsCount--mobile-container__searchResultsCount'
         # result_count = response.css(result_count_selector).extract()
 
         added_since = response.meta['days-since-added']
