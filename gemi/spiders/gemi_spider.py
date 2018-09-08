@@ -3,6 +3,8 @@ import scrapy
 from urllib.parse import urlencode
 from collections import OrderedDict
 from itertools import product
+from pymongo import MongoClient
+from pymongo import IndexModel, ASCENDING, DESCENDING, TEXT
 
 
 class GemiSpider(scrapy.Spider):
@@ -31,6 +33,9 @@ class GemiSpider(scrapy.Spider):
         self.should_get_details = details  # parse details page
         self.daily_search = daily_search  # search recent day only
 
+        # record processed items
+        self.links_seen = set()
+
     def start_requests(self):
         for url, day in self.generate_base_query_urls():
             yield scrapy.Request(url=url, meta={'days-since-added': day}, callback=self.parse)
@@ -47,23 +52,21 @@ class GemiSpider(scrapy.Spider):
             'toPrice': 8000000,
             'luom': 126,  # units feet, meter=127
             'currencyid': 100,  # US dollar
-            'ps': 50  # entries per page
+            'ps': 100  # entries per page
         }
 
-        within_x_days = [ (1: 1535580789155), (3: 1535407989155), (7: 1535062389155),
-                          (14: 1534457589155), (30: 1533075189155), (60: 1530483189155) ]
+        within_x_days = [(1, 1535580789155), (3, 1535407989155), (7, 1535062389155),
+                         (14, 1534457589155), (30, 1533075189155), (60, 1530483189155), ('60+', '')]
 
         within_x_days = OrderedDict(within_x_days)
 
         if self.daily_search:
-            self.base_query_parameters['pbsint'] = within_x_days[1]  # 1 day
+            within_x_days = {1: 1535580789155}
 
         for day, pbsint in within_x_days.items():
             self.base_query_parameters['pbsint'] = pbsint
-
             query_string = urlencode(self.base_query_parameters, 'utf-8')
             query_url = self.root_search_url + '?' + query_string
-
             yield query_url, day
 
     def parse(self, response):
@@ -96,6 +99,15 @@ class GemiSpider(scrapy.Spider):
 
             for length, link, price, location, broker in zip(lengths, links, prices, locations, brokers):
 
+                # catch duplicates early
+                if link in self.links_seen:
+                    if self.daily_search:
+                        pass
+                    else:
+                        continue  # do not further process the item
+
+                self.links_seen.add(link)
+
                 link_to_the_item_details, basic_fields = self.get_basic_fields(length, link, price, location, broker,
                                                                                added_since)
 
@@ -119,6 +131,8 @@ class GemiSpider(scrapy.Spider):
                 yield response.follow(next_page_url, meta=response.meta, callback=self.parse)
 
     def get_basic_fields(self, length, link, price, location, broker, added_since):
+        # make the link work
+        link_to_the_item_details = self.base_url + link
 
         # get the year and model from the link
         split_link = link.split('/')
@@ -127,9 +141,6 @@ class GemiSpider(scrapy.Spider):
         # clean the fields
         cleaned_fields = list(map(lambda field: " ".join(field.split()), [price, length, location, broker]))
         price, length, location, broker = cleaned_fields
-
-        # make the link work
-        link_to_the_item_details = self.base_url + link
 
         basic_fields = {
             'model': model,
@@ -153,7 +164,7 @@ class GemiSpider(scrapy.Spider):
         details = page.css(detail_selector).extract()
         full_specs = page.css(full_spec_selector).extract()
 
-        # add field to dict
+        # add details to the basic fields dict
         response.meta['full_specs'] = full_specs
         response.meta['details'] = details
 
