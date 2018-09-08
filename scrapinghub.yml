@@ -1,0 +1,3 @@
+project: 341910
+stacks:
+    default: scrapy:1.5-py3
