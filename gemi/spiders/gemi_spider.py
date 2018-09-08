@@ -3,8 +3,6 @@ import scrapy
 from urllib.parse import urlencode
 from collections import OrderedDict
 from itertools import product
-from pymongo import MongoClient
-from pymongo import IndexModel, ASCENDING, DESCENDING, TEXT
 
 
 class GemiSpider(scrapy.Spider):
@@ -170,38 +168,6 @@ class GemiSpider(scrapy.Spider):
 
         # send the item info to the pipeline
         yield response.meta
-
-    def add_extra_query_parameters(self):
-        # initialize
-        search_urls = list()
-
-        # dynamic query parameters
-        hull_materials = {'aluminium': 100, 'composite': 101, 'fiberglass': 102,
-                          'steel': 103, 'wood': 104, 'other': 105, 'hypalon': 106,
-                          'pvc': 107, 'ferro-cement': 108, 'carbon-fiber': 110}
-        fuels = {'gas': 100, 'diesel': 101, 'other': 102}
-        number_of_engines = {1: 100, 2: 101, 'other': 102, 'none': 103}
-        is_new = [True, False]
-        within_x_days = {1: 1535580789155, 3: 1535407989155, 7: 1535062389155, 14: 1534457589155, 30: 1533075189155,
-                         60: 1530483189155}
-
-        # generate dynamic queries
-        for recent_day, new_or_used, material, fuel, engine_number in product(
-                within_x_days, is_new, hull_materials,
-                fuels, number_of_engines):
-            extra_query_parameters = {'is': new_or_used,
-                                      'hmid': material,
-                                      'ftid': fuel,
-                                      'enid': engine_number,
-                                      'pbsint': recent_day
-                                      }
-
-            # add new parameters to the search url 
-            search_url = urlencode(OrderedDict(data=self.base_query_url, search=extra_query_parameters))
-
-            search_urls.append(search_url)
-
-        return search_urls
 
 
 class GemiUtil(object):
