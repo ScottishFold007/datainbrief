@@ -138,7 +138,7 @@ class GemiSpider(scrapy.Spider):
                 next_page_url = self.base_url + next_page_href
                 yield response.follow(next_page_url, meta=response.meta, callback=self.parse)
 
-    def get_basic_fields(self, length, link, price, location, broker, added_since):
+    def get_basic_fields(self, length, link, price, location, broker):
         # make the link work
         link_to_the_item_details = self.base_url + link
 
