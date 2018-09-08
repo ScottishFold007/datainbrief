@@ -11,9 +11,6 @@ from pymongo.errors import DuplicateKeyError
 class MongoPipeline(object):
 
     def __init__(self):
-        pass
-
-    def open_spider(self, spider):
         self.client = MongoClient(host='mongodb://<dbuser>:<dbpassword>@ds237072.mlab.com:37072/gemi',
                                   port=47450,
                                   username='roxy',
@@ -23,8 +20,11 @@ class MongoPipeline(object):
 
         self.db = self.client['gemi']  # db name
 
+    def open_spider(self, spider):
+        pass
+
     def close_spider(self, spider):
-        self.db.yachts.create_index([('link', TEXT)], unique=True)  # prevent duplicate ads next time
+        # self.db.yachts.create_index([('link', TEXT)], unique=True)  # prevent duplicate ads next time
         self.client.close()
 
     def process_item(self, item, spider):

@@ -18,7 +18,7 @@ class GemiSpider(scrapy.Spider):
     }
 
     # entry point
-    def __init__(self, next_page=False, details=False, daily_search=False, *args, **kwargs):
+    def __init__(self, next_page=True, details=False, daily_search=False, *args, **kwargs):
         super(GemiSpider, self).__init__(*args, **kwargs)
         # basics
         self.base_url = 'https://www.yachtworld.com'
@@ -50,7 +50,7 @@ class GemiSpider(scrapy.Spider):
             'toPrice': 8000000,
             'luom': 126,  # units feet, meter=127
             'currencyid': 100,  # US dollar
-            'ps': 100  # entries per page
+            'ps': 50  # entries per page
         }
 
         within_x_days = [(1, 1535580789155), (3, 1535407989155), (7, 1535062389155),
@@ -114,8 +114,8 @@ class GemiSpider(scrapy.Spider):
                 if link in self.links_seen:
                     continue  # do not further process the item
 
+                # if seen first time
                 self.links_seen.add(link)
-
                 link_to_the_item_details, basic_fields = self.get_basic_fields(length, link, price, location, broker)
                 basic_fields['added_within_x_days'] = added_since
 
