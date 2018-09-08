@@ -111,9 +111,10 @@ class GemiSpider(scrapy.Spider):
 
         # follow to the next page
         if self.next_page:
-            next_button = response.css('div.searchResultsNav a.navNext::attr(href)').extract_first()
-            if next_button is not None:
-                yield response.follow(next_button, meta=response.meta, callback=self.parse)
+            next_page_href = response.css('div.searchResultsNav span.navNext a.navNext::attr(href)').extract_first()
+            if next_page_href is not None:
+                next_page_url = self.base_url + next_page_href
+                yield response.follow(next_page_url, meta=response.meta, callback=self.parse)
 
     def get_basic_fields(self, length, link, price, location, broker, added_since):
 
