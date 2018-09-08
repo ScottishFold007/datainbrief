@@ -57,6 +57,7 @@ class GemiSpider(scrapy.Spider):
         if self.daily_search:
             within_x_days = {1: 1535580789155}
 
+        # generate queries for all day options
         for day, pbsint in within_x_days.items():
             self.base_query_parameters['pbsint'] = pbsint
             query_string = urlencode(self.base_query_parameters, 'utf-8')
@@ -66,7 +67,7 @@ class GemiSpider(scrapy.Spider):
     # Send urls to parse
     def start_requests(self):
         for url, day in self.generate_base_query_urls():
-            yield scrapy.Request(url=url, meta={'days-since-added': day}, callback=self.parse)
+            yield scrapy.Request(url=url, meta={'days-past-since-added': day}, callback=self.parse)
 
     def parse(self, response):
         # table selectors
@@ -101,15 +102,13 @@ class GemiSpider(scrapy.Spider):
 
                 # catch duplicates early
                 if link in self.links_seen:
-                    if self.daily_search:
-                        pass
-                    else:
-                        continue  # do not further process the item
+                    continue  # do not further process the item
 
                 self.links_seen.add(link)
 
-                link_to_the_item_details, basic_fields = self.get_basic_fields(length, link, price, location, broker,
-                                                                               added_since)
+                link_to_the_item_details, basic_fields = self.get_basic_fields(length, link, price, location, broker)
+                basic_fields['added_within_x_days'] = added_since
+
 
                 # go to the item page to get details
                 if self.should_get_details:
@@ -149,10 +148,8 @@ class GemiSpider(scrapy.Spider):
             'price': price,
             'location': location,
             'broker': broker,
-            'link': link_to_the_item_details,
-            'added_since': added_since
+            'link': link_to_the_item_details
         }
-
         return link_to_the_item_details, basic_fields
 
     @staticmethod
