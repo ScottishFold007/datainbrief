@@ -4,6 +4,8 @@ import scrapy
 from urllib.parse import urlencode
 from collections import OrderedDict
 
+from pymongo import MongoClient, IndexModel, ASCENDING, DESCENDING, TEXT
+
 
 class GemiSpider(scrapy.Spider):
     name = 'gemi'
@@ -31,8 +33,19 @@ class GemiSpider(scrapy.Spider):
         self.should_get_details = details  # parse details page
         self.daily_search = daily_search  # search recent day only
 
-        # record processed items
-        self.links_seen = set()
+        # init db
+        self.client = MongoClient(host='mongodb://<dbuser>:<dbpassword>@ds237072.mlab.com:37072/gemi',
+                                  port=47450,
+                                  username='roxy',
+                                  password='gemicik1',
+                                  authSource='gemi',
+                                  authMechanism='SCRAM-SHA-1')
+
+        self.db = self.client['gemi']  # db name
+
+
+        # get links seen
+        self.links_seen = self.db.yachts.distinct('link')
 
         self.start_urls, self.days = self.generate_base_query_urls()
 
