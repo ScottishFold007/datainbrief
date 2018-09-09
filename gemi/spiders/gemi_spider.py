@@ -90,15 +90,14 @@ class GemiSpider(scrapy.Spider):
         for url, day in zip(self.start_urls, self.days):
             yield scrapy.Request(url=url, meta={'days-past-since-added': day}, callback=self.parse)
 
-    def check_price_change(self, item, price):
-        if item['price'] == price:
-            pass
-        else:
-            item['price'].append()
-        pass
+    @staticmethod
+    def check_price_change(item, price):
+        if item['price'][-1][0] != price: # get the value of the last price (price,time) tuples
+            timestamp= time.time()
+            new_price = (price, timestamp)
+            item['price'].append(new_price)
+        return item
 
-    def increment_days_in_market(self):
-        pass
 
     def parse(self, response):
         # table selectors
@@ -117,9 +116,9 @@ class GemiSpider(scrapy.Spider):
         # result_count = response.css(result_count_selector).extract()
 
         try:
-            added_since = response.meta['days-past-since-added']
+            days_on_market = response.meta['days-past-since-added']
         except KeyError:
-            added_since = 'unknown'
+            days_on_market = 'unknown'
 
         for page in search_results:
             # parse fields
@@ -134,19 +133,25 @@ class GemiSpider(scrapy.Spider):
 
             for length, link, price, location, broker in zip(lengths, links, prices, locations, brokers):
 
-                # catch duplicates early
+                # track earlier items
                 if link in self.links_seen:
                     # get the item
                     item = self.db.yachts.find_one({"link": link})
-                    self.check_price_change(item)
-                    self.increment_days_in_market()
+                    item = self.check_price_change(item, price)
+                    # increment days on market
+                    item['added_within_x_days'] += 1
+                    # update timestamp
+                    item['last-changed'] = time.time()
 
-                    continue  # do not further process the item
+                    self.db.test.find_one_and_replace({'link': link}, item)
+
+                    continue
+
 
                 # if seen first time
                 self.links_seen.add(link)
                 link_to_the_item_details, basic_fields = self.get_basic_fields(length, link, price, location, broker)
-                basic_fields['added_within_x_days'] = added_since
+                basic_fields['added_within_x_days'] = days_on_market
 
                 # go to the item page to get details
                 if self.should_get_details:
@@ -194,7 +199,8 @@ class GemiSpider(scrapy.Spider):
             'location': location,
             'broker': broker,
             'link': link_to_the_item_details,
-            'last-changed': timestamp
+            'last-changed': timestamp,
+            'status': 'active'
         }
         return link_to_the_item_details, basic_fields
 

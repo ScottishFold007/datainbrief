@@ -40,6 +40,7 @@ class MongoPipeline(object):
 
     def close_spider(self, spider):
         # how to update that index
+
         self.db.yachts.create_index([('link', TEXT)])  # prevent duplicate ads next time
         self.client.close()
 
