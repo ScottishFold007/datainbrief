@@ -21,7 +21,7 @@ class GemiSpider(scrapy.Spider):
     }
 
     # entry point
-    def __init__(self, next_page=True, details=False, daily_search=False, *args, **kwargs):
+    def __init__(self, next_page=True, details=False, *args, **kwargs):
         super(GemiSpider, self).__init__(*args, **kwargs)
         # basics
         self.base_url = 'https://www.yachtworld.com'
@@ -31,7 +31,6 @@ class GemiSpider(scrapy.Spider):
         # control knobs
         self.next_page = next_page  # follow to the next pages
         self.should_get_details = details  # parse details page
-        self.daily_search = daily_search  # search recent day only
 
         # init db
         self.client = MongoClient(host='mongodb://<dbuser>:<dbpassword>@ds237072.mlab.com:37072/gemi',
@@ -72,8 +71,6 @@ class GemiSpider(scrapy.Spider):
 
         within_x_days = OrderedDict(within_x_days)
 
-        if self.daily_search:
-            within_x_days = {1: 1535580789155}
 
         # generate queries for all day options
         for day, pbsint in within_x_days.items():
