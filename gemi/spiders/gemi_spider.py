@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 import scrapy
-
+# util
 from urllib.parse import urlencode
 from collections import OrderedDict
-
-from pymongo import MongoClient, IndexModel, ASCENDING, DESCENDING, TEXT
-
-#time
+# db
+from gemi.database import get_db_client
+# time
 import time
 import datetime
 
@@ -36,15 +35,8 @@ class GemiSpider(scrapy.Spider):
         self.should_get_details = details  # parse details page
 
         # init db
-        self.client = MongoClient(host='mongodb://<dbuser>:<dbpassword>@ds237072.mlab.com:37072/gemi',
-                                  port=47450,
-                                  username='roxy',
-                                  password='gemicik1',
-                                  authSource='gemi',
-                                  authMechanism='SCRAM-SHA-1')
-
+        self.client = get_db_client()
         self.db = self.client['gemi']  # db name
-
 
         # get links seen
         self.links_seen = self.db.yachts.distinct('link')
@@ -189,7 +181,7 @@ class GemiSpider(scrapy.Spider):
         # timestamp the crawl
         timestamp = time.time()
         # current_time = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
-        price = (price, timestamp)
+        price = [(price, timestamp)]
 
         basic_fields = {
             'model': model,
