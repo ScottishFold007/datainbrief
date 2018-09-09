@@ -48,4 +48,5 @@ class MongoPipeline(object):
             self.db.yachts.insert_one(dict(item))
             return item
         except DuplicateKeyError:
-            return 'duplicate item'
+            print('duplicate item')
+            return item

@@ -6,6 +6,9 @@ from collections import OrderedDict
 
 from pymongo import MongoClient, IndexModel, ASCENDING, DESCENDING, TEXT
 
+#time
+import time
+import datetime
 
 class GemiSpider(scrapy.Spider):
     name = 'gemi'
@@ -87,6 +90,16 @@ class GemiSpider(scrapy.Spider):
         for url, day in zip(self.start_urls, self.days):
             yield scrapy.Request(url=url, meta={'days-past-since-added': day}, callback=self.parse)
 
+    def check_price_change(self, item, price):
+        if item['price'] == price:
+            pass
+        else:
+            item['price'].append()
+        pass
+
+    def increment_days_in_market(self):
+        pass
+
     def parse(self, response):
         # table selectors
         search_results_table_selector = 'div#searchResultsDetailsABTest'
@@ -123,6 +136,11 @@ class GemiSpider(scrapy.Spider):
 
                 # catch duplicates early
                 if link in self.links_seen:
+                    # get the item
+                    item = self.db.yachts.find_one({"link": link})
+                    self.check_price_change(item)
+                    self.increment_days_in_market()
+
                     continue  # do not further process the item
 
                 # if seen first time
@@ -163,6 +181,11 @@ class GemiSpider(scrapy.Spider):
 
         price = price.replace('US$', '')
 
+        # timestamp the crawl
+        timestamp = time.time()
+        # current_time = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+        price = (price, timestamp)
+
         basic_fields = {
             'model': model,
             'year': year,
@@ -170,7 +193,8 @@ class GemiSpider(scrapy.Spider):
             'price': price,
             'location': location,
             'broker': broker,
-            'link': link_to_the_item_details
+            'link': link_to_the_item_details,
+            'last-changed': timestamp
         }
         return link_to_the_item_details, basic_fields
 
