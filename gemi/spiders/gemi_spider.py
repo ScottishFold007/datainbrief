@@ -13,6 +13,7 @@ class GemiSpider(scrapy.Spider):
     # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
     custom_settings = {
         'ITEM_PIPELINES': {
+            'gemi.pipelines.DuplicatesPipeline': 200,
             'gemi.pipelines.MongoPipeline': 300  # pipeline with smaller number executed first
         }
     }
