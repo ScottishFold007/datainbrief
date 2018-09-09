@@ -21,10 +21,9 @@ class MongoPipeline(object):
         self.db = self.client['gemi']  # db name
 
     def open_spider(self, spider):
-        pass
+        self.db.yachts.create_index([('link', TEXT)], unique=True)  # prevent duplicate ads next time
 
     def close_spider(self, spider):
-        self.db.yachts.create_index([('link', TEXT)], unique=True)  # prevent duplicate ads next time
         self.client.close()
 
     def process_item(self, item, spider):
