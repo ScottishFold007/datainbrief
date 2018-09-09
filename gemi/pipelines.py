@@ -24,7 +24,7 @@ class MongoPipeline(object):
         pass
 
     def close_spider(self, spider):
-        # self.db.yachts.create_index([('link', TEXT)], unique=True)  # prevent duplicate ads next time
+        self.db.yachts.create_index([('link', TEXT)], unique=True)  # prevent duplicate ads next time
         self.client.close()
 
     def process_item(self, item, spider):
