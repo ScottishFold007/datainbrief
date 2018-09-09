@@ -51,7 +51,7 @@ class GemiSpider(scrapy.Spider):
             'toPrice': 8000000,
             'luom': 126,  # units feet, meter=127
             'currencyid': 100,  # US dollar
-            'ps': 100  # entries per page
+            'ps': 200  # entries per page
         }
 
         within_x_days = [(1, 1535580789155), (3, 1535407989155), (7, 1535062389155),
@@ -150,6 +150,8 @@ class GemiSpider(scrapy.Spider):
         # clean the fields
         cleaned_fields = list(map(lambda field: " ".join(field.split()), [price, length, location, broker]))
         price, length, location, broker = cleaned_fields
+
+        price = price.replace('US$', '')
 
         basic_fields = {
             'model': model,
