@@ -4,7 +4,7 @@
 #
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: https://doc.scrapy.org/en/latest/topics/item-pipeline.html
-from pymongo import IndexModel, ASCENDING, DESCENDING, TEXT
+from pymongo import TEXT
 from pymongo.errors import DuplicateKeyError
 from scrapy.exceptions import DropItem
 
@@ -38,8 +38,6 @@ class MongoPipeline(object):
 
     def close_spider(self, spider):
         # how to update that index
-
-        self.db.yachts.create_index([('link', TEXT)])  # prevent duplicate ads next time
         self.client.close()
 
     def process_item(self, item, spider):
