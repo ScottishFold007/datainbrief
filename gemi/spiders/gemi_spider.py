@@ -99,18 +99,7 @@ class GemiSpider(scrapy.Spider):
         for url, day in zip(self.start_urls, self.days):
             yield scrapy.Request(url=url, meta={'days-on-market': day}, callback=self.parse)
 
-    @staticmethod
-    def check_price_change(item, price):
-        price_list = item['price_list']
-        last_price = price_list[-1][0]  # get the value of the last price (price,time) tuples
-        if last_price != price:
-            date = datetime.datetime.now().date()
-            new_price = (price, date)
-            price_list.append(new_price)
-
-        return item
-
-    def parse_fields(self, page):
+    def extract_fields(self, page):
         # parse fields
         lengths = page.css(self.length_selector).extract()
         links = page.css(self.link_selector).extract()
@@ -124,13 +113,13 @@ class GemiSpider(scrapy.Spider):
 
         return lengths, links, prices, locations, brokers
 
-    def update_item_info(self, link):
+    def update_item_info(self, link, price):
         # get the item
         item = self.db.yachts.find_one({"link": link})
-        item = self.check_price_change(item, price)
+        # check the price
+        item = GemiUtil.check_price_change(item, price)
         # increment days on market
         item['days_on_market'] += 4
-
         # update only changed fields
         self.db.test.find_one_and_replace({'link': link}, item)
 
@@ -146,13 +135,13 @@ class GemiSpider(scrapy.Spider):
             days_on_market = 'unknown'
 
         for page in search_results:
-            lengths, links, prices, locations, brokers = self.parse_fields(page)
+            lengths, links, prices, locations, brokers = self.extract_fields(page)
 
             for length, link, price, location, broker in zip(lengths, links, prices, locations, brokers):
 
                 # track earlier items
                 if link in self.links_seen:
-                    self.update_item_info(link)
+                    self.update_item_info(link, price)
                     continue
 
                 # if seen first time
@@ -175,12 +164,6 @@ class GemiSpider(scrapy.Spider):
         # follow to the next page
         if self.next_page:
             self.follow_to_the_next_page(response)
-
-    def follow_to_the_next_page(self, response):
-        next_page_href = response.css(self.next_page_button_selector).extract_first()
-        if next_page_href is not None:
-            next_page_url = self.base_url + next_page_href
-            yield response.follow(next_page_url, meta=response.meta, callback=self.parse)
 
     def get_basic_fields(self, length, link, price, location, broker):
         # make the link work
@@ -229,4 +212,9 @@ class GemiSpider(scrapy.Spider):
         # send the item info to the pipeline
         yield response.meta
 
+    def follow_to_the_next_page(self, response):
+        next_page_href = response.css(self.next_page_button_selector).extract_first()
+        if next_page_href is not None:
+            next_page_url = self.base_url + next_page_href
+            yield response.follow(next_page_url, meta=response.meta, callback=self.parse)
 
