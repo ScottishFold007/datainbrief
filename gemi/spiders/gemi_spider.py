@@ -4,7 +4,7 @@ import scrapy
 from urllib.parse import urlencode
 from collections import OrderedDict
 # db
-from gemi.database import get_db_client
+from gemi.database import Database
 # time
 import datetime
 
@@ -17,7 +17,7 @@ class GemiSpider(scrapy.Spider):
     # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
     custom_settings = {
         'ITEM_PIPELINES': {
-            'gemi.pipelines.DuplicatesPipeline': 200,
+            # 'gemi.pipelines.DuplicatesPipeline': 200,
             'gemi.pipelines.MongoPipeline': 300  # pipeline with smaller number executed first
         }
     }
@@ -36,8 +36,7 @@ class GemiSpider(scrapy.Spider):
         self.should_get_details = details  # parse details page
 
         # init db
-        self.client = get_db_client()
-        self.db = self.client['gemi']  # db name
+        self.client, self.db = Database()
 
         # get links seen
         self.links_seen = self.db.yachts.distinct('link')
@@ -48,12 +47,15 @@ class GemiSpider(scrapy.Spider):
 
         # table selector
         self.search_results_table_selector = 'div#searchResultsDetailsABTest'
-        # field selectors
-        self.ink_selector = 'div.make-model a::attr(href)'
+        # basic field selectors
+        self.link_selector = 'div.make-model a::attr(href)'
         self.length_selector = 'div.make-model a span.length::text'
         self.price_selector = 'div.price::text'
         self.location_selector = 'div.location::text'
         self.broker_selector = 'div.broker::text'
+        # details
+        self.detail_selector = 'div.boatdetails::text'
+        self.full_spec_selector = 'div.fullspecs::text'
 
     # query generator
     def generate_base_query_urls(self):
@@ -96,14 +98,13 @@ class GemiSpider(scrapy.Spider):
     @staticmethod
     def check_price_change(item, price):
         price_list = item['price_list']
-        last_price = price_list[-1][0] # get the value of the last price (price,time) tuples
-        if  last_price != price:
+        last_price = price_list[-1][0]  # get the value of the last price (price,time) tuples
+        if last_price != price:
             date = datetime.datetime.now().date()
             new_price = (price, date)
             price_list.append(new_price)
 
         return item
-
 
     def parse_fields(self, page):
         # parse fields
@@ -128,7 +129,6 @@ class GemiSpider(scrapy.Spider):
 
         # update only changed fields
         self.db.test.find_one_and_replace({'link': link}, item)
-
 
     def parse(self, response):
         # define the data to process
@@ -175,7 +175,6 @@ class GemiSpider(scrapy.Spider):
                 next_page_url = self.base_url + next_page_href
                 yield response.follow(next_page_url, meta=response.meta, callback=self.parse)
 
-
     def get_basic_fields(self, length, link, price, location, broker):
         # make the link work
         link_to_the_item_details = self.base_url + link
@@ -187,6 +186,7 @@ class GemiSpider(scrapy.Spider):
         # clean the fields
         cleaned_fields = list(map(lambda field: " ".join(field.split()), [price, length, location, broker]))
         price, length, location, broker = cleaned_fields
+        price = price.replace('US$', '')
 
 
         # timestamp the crawl
@@ -207,19 +207,18 @@ class GemiSpider(scrapy.Spider):
         }
         return link_to_the_item_details, basic_fields
 
-
-    @staticmethod
-    def parse_details(response, page):
-        detail_selector = 'div.boatdetails::text'
-        full_spec_selector = 'div.fullspecs::text'
-
+    def parse_details(self, response, page):
         # parse fields
-        details = page.css(detail_selector).extract()
-        full_specs = page.css(full_spec_selector).extract()
+        details = page.css(self.detail_selector).extract()
+        full_specs = page.css(self.full_spec_selector).extract()
+
+        # search for hours
+        hours = GemiUtil.extract_hours_from_details(details)
 
         # add details to the basic fields dict
         response.meta['full_specs'] = full_specs
         response.meta['details'] = details
+        response.meta['hours'] = hours
 
         # send the item info to the pipeline
         yield response.meta
@@ -233,7 +232,12 @@ class GemiUtil(object):
             clean_price = price.replace('\n', '').strip()
             if clean_price == '':
                 prices.pop(i)
-
-            clean_price = clean_price.replace('US$', '')
-
         return prices
+
+    @staticmethod
+    def extract_hours_from_details(details):
+        if 'hours' in details:
+            pass
+        else:
+            return 'no hour info in details'
+

@@ -6,7 +6,7 @@ class Database(object):
         self.client = self.get_db_client()
         self.db = self.client['gemi']  # db name
 
-        return self.db
+        return self.client, self.db
 
     @staticmethod
     def get_db_client():

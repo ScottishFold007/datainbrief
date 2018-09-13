@@ -8,12 +8,12 @@ from pymongo import TEXT
 from pymongo.errors import DuplicateKeyError
 from scrapy.exceptions import DropItem
 
-from gemi.database import get_db_client
+from gemi.database import Database
 
 
 
-
-# first duplicate check, only checks duplicates in the current job
+# NECESSARY???
+# only checks duplicates in the current job
 class DuplicatesPipeline(object):
 
     def __init__(self):
@@ -30,8 +30,7 @@ class DuplicatesPipeline(object):
 class MongoPipeline(object):
 
     def __init__(self):
-        self.client = get_db_client()
-        self.db = self.client['gemi']  # db name
+        self.client, self.db = Database()
 
     def open_spider(self, spider):
         pass
