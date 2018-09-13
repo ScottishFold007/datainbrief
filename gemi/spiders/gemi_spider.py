@@ -6,7 +6,6 @@ from collections import OrderedDict
 # db
 from gemi.database import get_db_client
 # time
-import time
 import datetime
 
 
@@ -45,6 +44,17 @@ class GemiSpider(scrapy.Spider):
 
         self.start_urls, self.days = self.generate_base_query_urls()
 
+        # init selectors
+
+        # table selector
+        self.search_results_table_selector = 'div#searchResultsDetailsABTest'
+        # field selectors
+        self.ink_selector = 'div.make-model a::attr(href)'
+        self.length_selector = 'div.make-model a span.length::text'
+        self.price_selector = 'div.price::text'
+        self.location_selector = 'div.location::text'
+        self.broker_selector = 'div.broker::text'
+
     # query generator
     def generate_base_query_urls(self):
         urls = list()
@@ -60,11 +70,11 @@ class GemiSpider(scrapy.Spider):
             'toPrice': 8000000,
             'luom': 126,  # units feet, meter=127
             'currencyid': 100,  # US dollar
-            'ps': 200  # entries per page
+            'ps': 300  # entries per page
         }
 
         within_x_days = [(1, 1535580789155), (3, 1535407989155), (7, 1535062389155),
-                         (14, 1534457589155), (30, 1533075189155), (60, 1530483189155), ('60+', '')]
+                         (14, 1534457589155), (30, 1533075189155), (60, 1530483189155), (100, '')]
 
         within_x_days = OrderedDict(within_x_days)
 
@@ -85,25 +95,44 @@ class GemiSpider(scrapy.Spider):
 
     @staticmethod
     def check_price_change(item, price):
-        if item['price'][-1][0] != price:  # get the value of the last price (price,time) tuples
-            timestamp = time.time()
-            new_price = (price, timestamp)
-            item['price'].append(new_price)
+        price_list = item['price_list']
+        last_price = price_list[-1][0] # get the value of the last price (price,time) tuples
+        if  last_price != price:
+            date = datetime.datetime.now().date()
+            new_price = (price, date)
+            price_list.append(new_price)
+
         return item
 
+
+    def parse_fields(self, page):
+        # parse fields
+        lengths = page.css(self.length_selector).extract()
+        links = page.css(self.link_selector).extract()
+
+        prices = page.css(self.price_selector).extract()
+        # remove empty prices
+        prices = GemiUtil.remove_empty_prices(prices)
+
+        locations = page.css(self.location_selector).extract()
+        brokers = page.css(self.broker_selector).extract()
+
+        return lengths, links, prices, locations, brokers
+
+    def update_item_info(self, link):
+        # get the item
+        item = self.db.yachts.find_one({"link": link})
+        item = self.check_price_change(item, price)
+        # increment days on market
+        item['days_on_market'] += 4
+
+        # update only changed fields
+        self.db.test.find_one_and_replace({'link': link}, item)
+
+
     def parse(self, response):
-        # table selectors
-        search_results_table_selector = 'div#searchResultsDetailsABTest'
-        # field selectors
-        link_selector = 'div.make-model a::attr(href)'
-        length_selector = 'div.make-model a span.length::text'
-        price_selector = 'div.price::text'
-        location_selector = 'div.location::text'
-        broker_selector = 'div.broker::text'
-
         # define the data to process
-        search_results = response.css(search_results_table_selector)
-
+        search_results = response.css(self.search_results_table_selector)
         # result_count_selector = 'div.searchResultsCount--mobile-container__searchResultsCount'
         # result_count = response.css(result_count_selector).extract()
 
@@ -113,28 +142,13 @@ class GemiSpider(scrapy.Spider):
             days_on_market = 'unknown'
 
         for page in search_results:
-            # parse fields
-            lengths = page.css(length_selector).extract()
-            links = page.css(link_selector).extract()
-            prices = page.css(price_selector).extract()
-            locations = page.css(location_selector).extract()
-            brokers = page.css(broker_selector).extract()
-
-            # remove empty prices
-            prices = GemiUtil.remove_empty_prices(prices)
+            lengths, links, prices, locations, brokers = self.parse_fields(page)
 
             for length, link, price, location, broker in zip(lengths, links, prices, locations, brokers):
 
                 # track earlier items
                 if link in self.links_seen:
-                    # get the item
-                    item = self.db.yachts.find_one({"link": link})
-                    item = self.check_price_change(item, price)
-                    # increment days on market
-                    item['days_on_market'] += 1
-
-                    self.db.test.find_one_and_replace({'link': link}, item)
-
+                    self.update_item_info(link)
                     continue
 
                 # if seen first time
@@ -161,6 +175,7 @@ class GemiSpider(scrapy.Spider):
                 next_page_url = self.base_url + next_page_href
                 yield response.follow(next_page_url, meta=response.meta, callback=self.parse)
 
+
     def get_basic_fields(self, length, link, price, location, broker):
         # make the link work
         link_to_the_item_details = self.base_url + link
@@ -173,26 +188,25 @@ class GemiSpider(scrapy.Spider):
         cleaned_fields = list(map(lambda field: " ".join(field.split()), [price, length, location, broker]))
         price, length, location, broker = cleaned_fields
 
-        price = price.replace('US$', '')
 
         # timestamp the crawl
-        timestamp = time.time()
+        date = datetime.datetime.now().date()
         # current_time = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
-        price = [(price, timestamp)]
-        status = [('active', timestamp)]
-
+        price_list = [(price, date)]
+        status_list = [('active', date)]
 
         basic_fields = {
             'model': model,
             'year': year,
             'length': length,
-            'price': price,
             'location': location,
             'broker': broker,
             'link': link_to_the_item_details,
-            'status': status
+            'price_list': price_list,
+            'status_list': status_list
         }
         return link_to_the_item_details, basic_fields
+
 
     @staticmethod
     def parse_details(response, page):
@@ -219,4 +233,7 @@ class GemiUtil(object):
             clean_price = price.replace('\n', '').strip()
             if clean_price == '':
                 prices.pop(i)
+
+            clean_price = clean_price.replace('US$', '')
+
         return prices

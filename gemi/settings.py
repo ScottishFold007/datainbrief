@@ -26,6 +26,7 @@ COOKIES_ENABLED = False
 REDIRECT_ENABLED = True
 LOG_LEVEL = 'DEBUG'
 
+# ADD CRAWLERA
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32
@@ -68,11 +69,7 @@ DOWNLOAD_DELAY = 3
 #    'scrapy.extensions.telnet.TelnetConsole': None,
 #}
 
-# Configure item pipelines
-# See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
-#ITEM_PIPELINES = {
-#    'gemi.pipelines.GemiPipeline': 300,
-#}
+
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://doc.scrapy.org/en/latest/topics/autothrottle.html
