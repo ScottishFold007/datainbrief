@@ -56,6 +56,8 @@ class GemiSpider(scrapy.Spider):
         # details
         self.detail_selector = 'div.boatdetails::text'
         self.full_spec_selector = 'div.fullspecs::text'
+        # next page link
+        self.next_page_button_selector = 'div.searchResultsNav span.navNext a.navNext::attr(href)'
 
     # query generator
     def generate_base_query_urls(self):
@@ -170,10 +172,13 @@ class GemiSpider(scrapy.Spider):
 
         # follow to the next page
         if self.next_page:
-            next_page_href = response.css('div.searchResultsNav span.navNext a.navNext::attr(href)').extract_first()
-            if next_page_href is not None:
-                next_page_url = self.base_url + next_page_href
-                yield response.follow(next_page_url, meta=response.meta, callback=self.parse)
+            self.follow_to_the_next_page(response)
+
+    def follow_to_the_next_page(self, response):
+        next_page_href = response.css(self.next_page_button_selector).extract_first()
+        if next_page_href is not None:
+            next_page_url = self.base_url + next_page_href
+            yield response.follow(next_page_url, meta=response.meta, callback=self.parse)
 
     def get_basic_fields(self, length, link, price, location, broker):
         # make the link work
@@ -187,7 +192,6 @@ class GemiSpider(scrapy.Spider):
         cleaned_fields = list(map(lambda field: " ".join(field.split()), [price, length, location, broker]))
         price, length, location, broker = cleaned_fields
         price = price.replace('US$', '')
-
 
         # timestamp the crawl
         date = datetime.datetime.now().date()
@@ -240,4 +244,3 @@ class GemiUtil(object):
             pass
         else:
             return 'no hour info in details'
-
