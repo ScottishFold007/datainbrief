@@ -123,7 +123,7 @@ class GemiSpider(scrapy.Spider):
 
                 # track earlier items
                 if link in self.links_seen:
-                    # self.update_item_info(link, price, sale_pending)
+                    self.update_item_info(link, price, sale_pending)
                     continue
 
                 # if seen first time
