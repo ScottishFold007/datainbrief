@@ -5,6 +5,8 @@ from urllib.parse import urlencode
 from collections import OrderedDict
 # db
 from gemi.database import get_db
+from gemi.extractor import FieldExtractor
+from gemi.util import Util
 
 
 class ItemProcessor:
@@ -24,17 +26,17 @@ class ItemProcessor:
             }
         )
 
-    def process_item_info(self, length, link, price, location, broker, sale_pending, item_info):
+    def update_item_info(self, length, link, price, location, broker, sale_pending, item_info):
         # track earlier items
         if link in self.links_seen:
-            self.update_item_info(link, price, sale_pending)
+            self.update_already_existing_item(link, price, sale_pending)
             return None
 
         # if seen first time
         self.links_seen.append(link)
 
         # clean
-        price, length, location, broker = clean_basic_fields(price, length, location, broker)
+        price, length, location, broker = Cleaner.clean_basic_fields(price, length, location, broker)
 
         # fill in the item info
         basic_fields = {
@@ -48,22 +50,22 @@ class ItemProcessor:
         item_info.update(basic_fields)
 
         # add model and year
-        model_and_year = get_model_and_year(link)
+        model_and_year = FieldExtractor.get_model_and_year(link)
         item_info.update(model_and_year)
 
         # add price and status
-        price_and_status = get_price_and_status_lists(price)
+        price_and_status = FieldExtractor.get_price_and_status_lists(price)
         item_info.update(price_and_status)
 
         return item_info
 
-    def update_item_info(self, link, price, sale_pending):
+    def update_already_existing_item(self, link, price, sale_pending):
         # get the item
         item = self.db.yachts.find_one({"link": link})
         # check the price
-        price_list = check_price_change(item, price)
+        price_list = ChangeTracker.check_price_change(item, price)
         # check status
-        sale_status = check_status_change(item, sale_pending)
+        sale_status = ChangeTracker.check_status_change(item, sale_pending)
 
         # update only changed fields
         self.db.yachts.find_one_and_update(
@@ -77,111 +79,86 @@ class ItemProcessor:
 
 
 # STATIC METHODS
+class Cleaner:
+    @staticmethod
+    def clean_basic_fields(price, length, location, broker):
+        # clean the fields
+        cleaned_fields = list(map(lambda field: " ".join(field.split()), [price, length, location, broker]))
+        return cleaned_fields
 
-def clean_basic_fields(price, length, location, broker):
-    # clean the fields
-    cleaned_fields = list(map(lambda field: " ".join(field.split()), [price, length, location, broker]))
-    return cleaned_fields
-
-
-def get_price_and_status_lists(price):
-    # timestamp the crawl
-    today = get_todays_date().isoformat()
-    price_list = [(price, today)]
-    status_list = [('active', today)]
-
-    return {'price_list': price_list,
-            'status_list': status_list
-            }
+    @staticmethod
+    def remove_empty_prices(prices):
+        for i, price in enumerate(prices):
+            clean_price = price.replace('\n', '').strip()
+            if clean_price == '':
+                prices.pop(i)
+        return prices
 
 
-def get_model_and_year(link):
-    # get the year and model from the link
-    split_link = link.split('/')
-    year, model = split_link[2], split_link[3]
+class ChangeTracker:
+    @staticmethod
+    def check_price_change(item, price):
+        today = get_todays_date()
+        try:
+            price_list = item['price_list']
+            last_price = price_list[-1][0]  # get the value of the last price (price,time) tuples
+        except KeyError:
+            # remove the price and return its value
+            last_price = item.pop('price', None)
+            week_ago = Util.get_date_of_x_days_ago(7)
+            # create price list
+            price_list = [(last_price, week_ago.isoformat())]
 
-    return {
-        'model': model,
-        'year': year,
-    }
+        if last_price != price:
+            new_price = (price, today.isoformat())
+            price_list.append(new_price)
 
+        return price_list
 
-def remove_empty_prices(prices):
-    for i, price in enumerate(prices):
-        clean_price = price.replace('\n', '').strip()
-        if clean_price == '':
-            prices.pop(i)
-    return prices
+    @staticmethod
+    def check_status_change(item, sale_pending):
+        today = Util.get_todays_date()
+        week_ago = Util.get_date_of_x_days_ago(7)
+        try:
+            sale_status = item['sale_status']
+        except KeyError:
+            sale_status = [('active', week_ago.isoformat())]
+        if sale_pending:
+            new_status = ('sale_pending', today.isoformat())
+            sale_status.append(new_status)
 
-
-def get_todays_date():
-    return datetime.datetime.now().date()
-
-
-def check_price_change(item, price):
-    today = get_todays_date()
-    try:
-        price_list = item['price_list']
-        last_price = price_list[-1][0]  # get the value of the last price (price,time) tuples
-    except KeyError:
-        # remove the price and return its value
-        last_price = item.pop('price', None)
-        week_ago = today - datetime.timedelta(days=7)
-        # create price list
-        price_list = [(last_price, week_ago.isoformat())]
-
-    if last_price != price:
-        new_price = (price, today.isoformat())
-        price_list.append(new_price)
-
-    return price_list
+        return sale_status
 
 
-def check_status_change(item, sale_pending):
-    today = get_todays_date()
-    week_ago = today - datetime.timedelta(days=7)
-    try:
-        sale_status = item['sale_status']
-    except KeyError:
-        sale_status = [('active', week_ago.isoformat())]
-    if sale_pending:
-        new_status = ('sale_pending', today.isoformat())
-        sale_status.append(new_status)
+class QueryGenerator:
+    @staticmethod
+    def generate_urls_for_search_queries():
+        urls = list()
+        root_search_url = 'https://www.yachtworld.com/core/listing/cache/searchResults.jsp'
 
-    return sale_status
+        # default query
+        base_query_parameters = {
+            'fromLength': 25,
+            'toLength': '',
+            'fromYear': 1995,
+            'toYear': '',
+            'fromPrice': 20000,
+            'toPrice': 8000000,
+            'luom': 126,  # units feet, meter=127
+            'currencyid': 100,  # US dollar
+            'ps': 300  # entries per page
+        }
 
+        within_x_days = [(1, 1535580789155), (3, 1535407989155), (7, 1535062389155),
+                         (14, 1534457589155), (30, 1533075189155), (60, 1530483189155), (100, '')]
 
-# query generator
-def generate_base_query_urls():
-    urls = list()
-    days = list()
+        within_x_days = OrderedDict(within_x_days)
 
-    root_search_url = 'https://www.yachtworld.com/core/listing/cache/searchResults.jsp'
+        # generate queries for all day options
+        for day, pbsint in within_x_days.items():
+            base_query_parameters['pbsint'] = pbsint
+            query_string = urlencode(base_query_parameters, 'utf-8')
+            query_url = root_search_url + '?' + query_string
+            urls.append(query_url)
 
-    # default query
-    base_query_parameters = {
-        'fromLength': 25,
-        'toLength': '',
-        'fromYear': 1995,
-        'toYear': '',
-        'fromPrice': 20000,
-        'toPrice': 8000000,
-        'luom': 126,  # units feet, meter=127
-        'currencyid': 100,  # US dollar
-        'ps': 300  # entries per page
-    }
-
-    within_x_days = [(1, 1535580789155), (3, 1535407989155), (7, 1535062389155),
-                     (14, 1534457589155), (30, 1533075189155), (60, 1530483189155), (100, '')]
-
-    within_x_days = OrderedDict(within_x_days)
-
-    # generate queries for all day options
-    for day, pbsint in within_x_days.items():
-        base_query_parameters['pbsint'] = pbsint
-        query_string = urlencode(base_query_parameters, 'utf-8')
-        query_url = root_search_url + '?' + query_string
-        urls.append(query_url)
-        days.append(day)
-
-    return urls, days
+        return urls

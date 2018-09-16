@@ -2,7 +2,7 @@
 # packages
 import scrapy
 # self coded modules
-from gemi.processor import ItemProcessor
+from gemi.processor import ItemProcessor, QueryGenerator
 from gemi.extractor import FieldExtractor
 
 
@@ -27,7 +27,8 @@ class GemiSpider(scrapy.Spider):
         self.next_page = next_page  # follow to the next pages
         self.should_get_details = details  # parse details page
         # get urls
-        self.start_urls, self.days = processor.generate_base_query_urls()
+        self.start_urls = QueryGenerator.generate_urls_for_search_queries()
+        self.days = [1, 3, 7, 14, 30, 60, 100]
         self.extractor = FieldExtractor()
         self.processor = ItemProcessor()
 
@@ -56,8 +57,8 @@ class GemiSpider(scrapy.Spider):
                                                                            locations, brokers,
                                                                            sale_pending_fields):
 
-                item_info = ItemProcessor.process_item_info(length, link, price, location, broker, sale_pending,
-                                                            item_info)
+                item_info = ItemProcessor.update_item_info(length, link, price, location, broker, sale_pending,
+                                                           item_info)
                 if not item_info:  # just updated already existing item
                     # continue
                     pass
