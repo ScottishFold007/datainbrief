@@ -3,7 +3,80 @@ import datetime
 # util
 from urllib.parse import urlencode
 from collections import OrderedDict
+# db
+from gemi.database import get_db
 
+
+class ItemProcessor:
+    def __init__(self):
+        # init db
+        self.db = get_db()
+        # get links seen
+        self.links_seen = self.db.yachts.distinct('link')
+        self.set_initial_status()
+
+    def set_initial_status(self):
+        # set all as not updated first
+        self.db.yachts.update_many(
+            {},  # select all
+            {
+                '$set': {'updated': False}
+            }
+        )
+
+    def process_item_info(self, length, link, price, location, broker, sale_pending, item_info):
+        # track earlier items
+        if link in self.links_seen:
+            self.update_item_info(link, price, sale_pending)
+            return None
+
+        # if seen first time
+        self.links_seen.append(link)
+
+        # clean
+        price, length, location, broker = clean_basic_fields(price, length, location, broker)
+
+        # fill in the item info
+        basic_fields = {
+            'length': length,
+            'location': location,
+            'broker': broker,
+            'link': link,
+            'updated': True,
+            'removed': False
+        }
+        item_info.update(basic_fields)
+
+        # add model and year
+        model_and_year = get_model_and_year(link)
+        item_info.update(model_and_year)
+
+        # add price and status
+        price_and_status = get_price_and_status_lists(price)
+        item_info.update(price_and_status)
+
+        return item_info
+
+    def update_item_info(self, link, price, sale_pending):
+        # get the item
+        item = self.db.yachts.find_one({"link": link})
+        # check the price
+        price_list = check_price_change(item, price)
+        # check status
+        sale_status = check_status_change(item, sale_pending)
+
+        # update only changed fields
+        self.db.yachts.find_one_and_update(
+            {'link': link},  # filter
+            {
+                '$unset': {'price': ""},  # remove price field
+                '$set': {'price_list': price_list, 'sale_status': sale_status, 'updated': True},
+                '$inc': {'days_on_market': 7}
+            }
+        )
+
+
+# STATIC METHODS
 
 def clean_basic_fields(price, length, location, broker):
     # clean the fields
@@ -39,13 +112,6 @@ def remove_empty_prices(prices):
         if clean_price == '':
             prices.pop(i)
     return prices
-
-
-def extract_hours_from_details(details):
-    if 'hours' in details:
-        pass
-    else:
-        return 'no hour info in details'
 
 
 def get_todays_date():
