@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 # packages
 import scrapy
-# util
-from urllib.parse import urlencode
-from collections import OrderedDict
 # self coded modules
 # db
 from gemi.database import get_db
@@ -50,13 +47,10 @@ class GemiSpider(scrapy.Spider):
         # init db
         self.db = get_db()
         # get links seen
-        self.links_seen = self.get_previous_items()
+        self.links_seen = self.db.yachts.distinct('link')
         self.set_initial_status()
         # get urls
-        self.start_urls, self.days = self.generate_base_query_urls()
-
-    def get_previous_items(self):
-        return self.db.yachts.distinct('link')
+        self.start_urls, self.days = processor.generate_base_query_urls()
 
     def set_initial_status(self):
         # set all as not updated first
@@ -66,42 +60,6 @@ class GemiSpider(scrapy.Spider):
                 '$set': {'updated': False}
             }
         )
-
-    # query generator
-    @staticmethod
-    def generate_base_query_urls():
-        urls = list()
-        days = list()
-
-        root_search_url = 'https://www.yachtworld.com/core/listing/cache/searchResults.jsp'
-
-        # default query
-        base_query_parameters = {
-            'fromLength': 25,
-            'toLength': '',
-            'fromYear': 1995,
-            'toYear': '',
-            'fromPrice': 20000,
-            'toPrice': 8000000,
-            'luom': 126,  # units feet, meter=127
-            'currencyid': 100,  # US dollar
-            'ps': 300  # entries per page
-        }
-
-        within_x_days = [(1, 1535580789155), (3, 1535407989155), (7, 1535062389155),
-                         (14, 1534457589155), (30, 1533075189155), (60, 1530483189155), (100, '')]
-
-        within_x_days = OrderedDict(within_x_days)
-
-        # generate queries for all day options
-        for day, pbsint in within_x_days.items():
-            base_query_parameters['pbsint'] = pbsint
-            query_string = urlencode(base_query_parameters, 'utf-8')
-            query_url = root_search_url + '?' + query_string
-            urls.append(query_url)
-            days.append(day)
-
-        return urls, days
 
     # Send urls to parse
     def start_requests(self):
@@ -162,6 +120,7 @@ class GemiSpider(scrapy.Spider):
                                                                            locations, brokers,
                                                                            sale_pending_fields):
 
+
                 # track earlier items
                 if link in self.links_seen:
                     # self.update_item_info(link, price, sale_pending)
@@ -207,7 +166,10 @@ class GemiSpider(scrapy.Spider):
 
         # follow to the next page
         if self.next_page:
-            self.follow_to_the_next_page(response)
+            next_page_href = response.css(self.next_page_button_selector).extract_first()
+            if next_page_href is not None:
+                next_page_url = self.base_url + next_page_href
+                yield response.follow(next_page_url, meta=response.meta, callback=self.parse)
 
     def parse_details(self, response, page):
         item_info = response.meta
@@ -229,7 +191,4 @@ class GemiSpider(scrapy.Spider):
         yield item_info
 
     def follow_to_the_next_page(self, response):
-        next_page_href = response.css(self.next_page_button_selector).extract_first()
-        if next_page_href is not None:
-            next_page_url = self.base_url + next_page_href
-            yield response.follow(next_page_url, meta=response.meta, callback=self.parse)
+        pass
