@@ -81,24 +81,6 @@ class GemiSpider(scrapy.Spider):
 
         return lengths, links, prices, locations, brokers, sale_pending_fields
 
-    def update_item_info(self, link, price, sale_pending):
-        # get the item
-        item = self.db.yachts.find_one({"link": link})
-        # check the price
-        price_list = processor.check_price_change(item, price)
-        # check status
-        sale_status = processor.check_status_change(item, sale_pending)
-
-        # update only changed fields
-        self.db.yachts.find_one_and_update(
-            {'link': link},  # filter
-            {
-                '$unset': {'price': ""},  # remove price field
-                '$set': {'price_list': price_list, 'sale_status': sale_status, 'updated': True},
-                '$inc': {'days_on_market': 7}
-            }
-        )
-
     def parse(self, response):
         # define the data to process
         search_results = response.css(self.search_results_table_selector)
@@ -120,36 +102,9 @@ class GemiSpider(scrapy.Spider):
                                                                            locations, brokers,
                                                                            sale_pending_fields):
 
-
-                # track earlier items
-                if link in self.links_seen:
-                    # self.update_item_info(link, price, sale_pending)
+                item_info = self.process_item_info(length, link, price, location, broker, sale_pending, item_info)
+                if not item_info:  # just updated already existing item
                     continue
-
-                # if seen first time
-                self.links_seen.append(link)
-
-                # clean
-                price, length, location, broker = processor.clean_basic_fields(price, length, location, broker)
-
-                # fill in the item info
-                basic_fields = {
-                    'length': length,
-                    'location': location,
-                    'broker': broker,
-                    'link': link,
-                    'updated': True,
-                    'removed': False
-                }
-                item_info.update(basic_fields)
-
-                # add model and year
-                model_and_year = processor.get_model_and_year(link)
-                item_info.update(model_and_year)
-
-                # add price and status
-                price_and_status = processor.get_price_and_status_lists(price)
-                item_info.update(price_and_status)
 
                 # go to the item page to get details
                 if self.should_get_details:
@@ -158,11 +113,11 @@ class GemiSpider(scrapy.Spider):
                     yield scrapy.Request(
                         link_to_the_item_details,
                         callback=self.parse_details(page=page),
-                        meta=basic_fields
+                        meta=item_info
                     )
                 else:
                     # send the item to the pipeline
-                    yield basic_fields
+                    yield item_info
 
         # follow to the next page
         if self.next_page:
@@ -170,6 +125,57 @@ class GemiSpider(scrapy.Spider):
             if next_page_href is not None:
                 next_page_url = self.base_url + next_page_href
                 yield response.follow(next_page_url, meta=response.meta, callback=self.parse)
+
+    def process_item_info(self, length, link, price, location, broker, sale_pending, item_info):
+        # track earlier items
+        if link in self.links_seen:
+            self.update_item_info(link, price, sale_pending)
+            return None
+
+        # if seen first time
+        self.links_seen.append(link)
+
+        # clean
+        price, length, location, broker = processor.clean_basic_fields(price, length, location, broker)
+
+        # fill in the item info
+        basic_fields = {
+            'length': length,
+            'location': location,
+            'broker': broker,
+            'link': link,
+            'updated': True,
+            'removed': False
+        }
+        item_info.update(basic_fields)
+
+        # add model and year
+        model_and_year = processor.get_model_and_year(link)
+        item_info.update(model_and_year)
+
+        # add price and status
+        price_and_status = processor.get_price_and_status_lists(price)
+        item_info.update(price_and_status)
+
+        return item_info
+
+    def update_item_info(self, link, price, sale_pending):
+        # get the item
+        item = self.db.yachts.find_one({"link": link})
+        # check the price
+        price_list = processor.check_price_change(item, price)
+        # check status
+        sale_status = processor.check_status_change(item, sale_pending)
+
+        # update only changed fields
+        self.db.yachts.find_one_and_update(
+            {'link': link},  # filter
+            {
+                '$unset': {'price': ""},  # remove price field
+                '$set': {'price_list': price_list, 'sale_status': sale_status, 'updated': True},
+                '$inc': {'days_on_market': 7}
+            }
+        )
 
     def parse_details(self, response, page):
         item_info = response.meta
