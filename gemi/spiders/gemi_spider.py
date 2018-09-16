@@ -4,12 +4,9 @@ import scrapy
 # util
 from urllib.parse import urlencode
 from collections import OrderedDict
-# time
-import datetime
-
 # self coded modules
 # db
-from gemi.database import Database
+from gemi.database import get_db
 # processor
 from gemi.processor import FieldProcessor
 
@@ -57,7 +54,7 @@ class GemiSpider(scrapy.Spider):
         self.should_get_details = details  # parse details page
 
         # init db
-        self.client, self.db = Database()
+        self.db = get_db()
 
         # get links seen
         self.links_seen = self.db.yachts.distinct('link')
@@ -155,7 +152,7 @@ class GemiSpider(scrapy.Spider):
                     continue
 
                 # if seen first time
-                self.links_seen.add(link)
+                self.links_seen.append(link)
 
                 # clean
                 price, length, location, broker = FieldProcessor.clean_basic_fields(price, length, location, broker)
@@ -221,18 +218,17 @@ class GemiSpider(scrapy.Spider):
             next_page_url = self.base_url + next_page_href
             yield response.follow(next_page_url, meta=response.meta, callback=self.parse)
 
-    @staticmethod
-    def extract_fields(this, page):
+    def extract_fields(self, page):
         # parse fields
-        lengths = page.css(this.length_selector).extract()
-        links = page.css(this.link_selector).extract()
+        lengths = page.css(self.length_selector).extract()
+        links = page.css(self.link_selector).extract()
 
-        prices = page.css(this.price_selector).extract()
+        prices = page.css(self.price_selector).extract()
         # remove empty prices
         prices = FieldProcessor.remove_empty_prices(prices)
 
-        locations = page.css(this.location_selector).extract()
-        sale_pending_fields = page.css(this.sale_pending).extract()
-        brokers = page.css(this.broker_selector).extract()
+        locations = page.css(self.location_selector).extract()
+        sale_pending_fields = page.css(self.sale_pending).extract()
+        brokers = page.css(self.broker_selector).extract()
 
         return lengths, links, prices, locations, brokers, sale_pending_fields

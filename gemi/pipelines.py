@@ -7,10 +7,8 @@
 from pymongo.errors import DuplicateKeyError
 from scrapy.exceptions import DropItem
 
-from gemi.database import Database
-# time
-import datetime
-
+from gemi.database import get_db_client, get_db
+from gemi.processor import get_todays_date
 
 # only checks duplicates in the current job
 class DuplicatesPipeline(object):
@@ -29,13 +27,14 @@ class DuplicatesPipeline(object):
 class MongoPipeline(object):
 
     def __init__(self):
-        self.client, self.db = Database()
+        self.client = get_db_client()
+        self.db = get_db()
 
     def open_spider(self, spider):
         pass
 
     def record_removed_items(self):
-        today = datetime.datetime.now().date()
+        today = get_todays_date().isoformat()
         # get untouched items
         not_updated_items = self.db.yachts.find({'updated': False})
         # update info for every item

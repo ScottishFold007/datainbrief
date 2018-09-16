@@ -3,21 +3,8 @@ from pymongo import MongoClient, IndexModel, ASCENDING, DESCENDING, TEXT
 
 class Database(object):
     def __index__(self):
-        self.client = self.get_db_client()
+        self.client = get_db_client()
         self.db = self.client['gemi']  # db name
-
-        return self.client, self.db
-
-    @staticmethod
-    def get_db_client():
-        client = MongoClient(host='mongodb://<dbuser>:<dbpassword>@ds237072.mlab.com:37072/gemi',
-                             port=47450,
-                             username='roxy',
-                             password='gemicik1',
-                             authSource='gemi',
-                             authMechanism='SCRAM-SHA-1')
-
-        return client
 
     def remove_duplicates(self):
         print('removing dups..')
@@ -53,6 +40,22 @@ class Database(object):
     def get_index_info(self):
         print(self.db.yachts.index_information())
 
+
+def get_db_client():
+    client = MongoClient(host='mongodb://<dbuser>:<dbpassword>@ds237072.mlab.com:37072/gemi',
+                         port=47450,
+                         username='roxy',
+                         password='gemicik1',
+                         authSource='gemi',
+                         authMechanism='SCRAM-SHA-1')
+
+    return client
+
+
+def get_db():
+    client = get_db_client()
+    db = client['gemi']
+    return db
 
 if __name__ == "__main__":
     pass
