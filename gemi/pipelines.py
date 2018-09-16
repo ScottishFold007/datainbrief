@@ -39,7 +39,12 @@ class MongoPipeline(object):
         not_updated_items = self.db.yachts.find({'updated': False})
         # update info for every item
         for item in not_updated_items:
-            sale_status = item['sale_status'].append(('sold', today))
+            try:
+                sale_status = item['sale_status']
+            except KeyError:
+                sale_status = list()
+
+            sale_status.append(('sold', today))
             self.db.yachts.update_one(
                 {'link': item['link']},
                 {
