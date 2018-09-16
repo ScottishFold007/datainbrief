@@ -10,7 +10,6 @@ from gemi.database import Database
 import datetime
 
 
-
 class GemiSpider(scrapy.Spider):
     name = 'gemi'
     allowed_domains = ['yachtworld.com']
@@ -119,7 +118,7 @@ class GemiSpider(scrapy.Spider):
         # check the price
         item = GemiUtil.check_price_change(item, price)
         # increment days on market
-        item['days_on_market'] += 4
+        item['days_on_market'] += 7
         # update only changed fields
         self.db.test.find_one_and_replace({'link': link}, item)
 
@@ -137,6 +136,9 @@ class GemiSpider(scrapy.Spider):
         for page in search_results:
             lengths, links, prices, locations, brokers = self.extract_fields(page)
 
+            basic_fields = dict()
+            basic_fields['days_on_market'] = days_on_market
+
             for length, link, price, location, broker in zip(lengths, links, prices, locations, brokers):
 
                 # track earlier items
@@ -146,11 +148,30 @@ class GemiSpider(scrapy.Spider):
 
                 # if seen first time
                 self.links_seen.add(link)
-                link_to_the_item_details, basic_fields = self.get_basic_fields(length, link, price, location, broker)
-                basic_fields['days_on_market'] = days_on_market
+
+                # clean
+                price, length, location, broker = FieldProcessor.clean_basic_fields(price, length, location, broker)
+
+                # fill in the item info
+                item_info = {
+                    'length': length,
+                    'location': location,
+                    'broker': broker,
+                    'link': link
+                }
+                basic_fields.update(item_info)
+
+                # add model and year
+                model_and_year = FieldProcessor.get_model_and_year(link)
+                basic_fields.update(model_and_year)
+
+                # add price and status
+                price_and_status = FieldProcessor.get_price_and_status_lists(price)
+                basic_fields.update(price_and_status)
 
                 # go to the item page to get details
                 if self.should_get_details:
+                    link_to_the_item_details = self.base_url + link
                     # send a request to the details page
                     yield scrapy.Request(
                         link_to_the_item_details,
@@ -164,37 +185,6 @@ class GemiSpider(scrapy.Spider):
         # follow to the next page
         if self.next_page:
             self.follow_to_the_next_page(response)
-
-    def get_basic_fields(self, length, link, price, location, broker):
-        # make the link work
-        link_to_the_item_details = self.base_url + link
-
-        # get the year and model from the link
-        split_link = link.split('/')
-        year, model = split_link[2], split_link[3]
-
-        # clean the fields
-        cleaned_fields = list(map(lambda field: " ".join(field.split()), [price, length, location, broker]))
-        price, length, location, broker = cleaned_fields
-        price = price.replace('US$', '')
-
-        # timestamp the crawl
-        date = datetime.datetime.now().date()
-        # current_time = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
-        price_list = [(price, date)]
-        status_list = [('active', date)]
-
-        basic_fields = {
-            'model': model,
-            'year': year,
-            'length': length,
-            'location': location,
-            'broker': broker,
-            'link': link_to_the_item_details,
-            'price_list': price_list,
-            'status_list': status_list
-        }
-        return link_to_the_item_details, basic_fields
 
     def parse_details(self, response, page):
         # parse fields
@@ -218,3 +208,33 @@ class GemiSpider(scrapy.Spider):
             next_page_url = self.base_url + next_page_href
             yield response.follow(next_page_url, meta=response.meta, callback=self.parse)
 
+
+class FieldProcessor(object):
+    @staticmethod
+    def clean_basic_fields(price, length, location, broker):
+        # clean the fields
+        cleaned_fields = list(map(lambda field: " ".join(field.split()), [price, length, location, broker]))
+        return cleaned_fields
+
+    @staticmethod
+    def get_price_and_status_lists(price):
+        # timestamp the crawl
+        date = datetime.datetime.now().date()
+        # current_time = datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+        price_list = [(price, date)]
+        status_list = [('active', date)]
+
+        return {'price_list': price_list,
+                'status_list': status_list
+                }
+
+    @staticmethod
+    def get_model_and_year(link):
+        # get the year and model from the link
+        split_link = link.split('/')
+        year, model = split_link[2], split_link[3]
+
+        return {
+            'model': model,
+            'year': year,
+        }
