@@ -8,7 +8,7 @@ from collections import OrderedDict
 # db
 from gemi.database import get_db
 # processor
-from gemi.processor import FieldProcessor
+import gemi.processor as processor
 
 
 class GemiSpider(scrapy.Spider):
@@ -112,9 +112,9 @@ class GemiSpider(scrapy.Spider):
         # get the item
         item = self.db.yachts.find_one({"link": link})
         # check the price
-        price_list = FieldProcessor.check_price_change(item, price)
+        price_list = processor.check_price_change(item, price)
         # check status
-        sale_status = FieldProcessor.check_status_change(item, sale_pending)
+        sale_status = processor.check_status_change(item, sale_pending)
 
         # update only changed fields
         self.db.yachts.find_one_and_update(
@@ -155,7 +155,7 @@ class GemiSpider(scrapy.Spider):
                 self.links_seen.append(link)
 
                 # clean
-                price, length, location, broker = FieldProcessor.clean_basic_fields(price, length, location, broker)
+                price, length, location, broker = processor.clean_basic_fields(price, length, location, broker)
 
                 # fill in the item info
                 basic_fields = {
@@ -169,11 +169,11 @@ class GemiSpider(scrapy.Spider):
                 item_info.update(basic_fields)
 
                 # add model and year
-                model_and_year = FieldProcessor.get_model_and_year(link)
+                model_and_year = processor.get_model_and_year(link)
                 item_info.update(model_and_year)
 
                 # add price and status
-                price_and_status = FieldProcessor.get_price_and_status_lists(price)
+                price_and_status = processor.get_price_and_status_lists(price)
                 item_info.update(price_and_status)
 
                 # go to the item page to get details
@@ -201,7 +201,7 @@ class GemiSpider(scrapy.Spider):
         full_specs = page.css(self.full_spec_selector).extract()
 
         # search for hours
-        hours = FieldProcessor.extract_hours_from_details(details)
+        hours = processor.extract_hours_from_details(details)
 
         # add details to item info
         details = {'full_specs': full_specs,
@@ -225,7 +225,7 @@ class GemiSpider(scrapy.Spider):
 
         prices = page.css(self.price_selector).extract()
         # remove empty prices
-        prices = FieldProcessor.remove_empty_prices(prices)
+        prices = processor.remove_empty_prices(prices)
 
         locations = page.css(self.location_selector).extract()
         sale_pending_fields = page.css(self.sale_pending).extract()
