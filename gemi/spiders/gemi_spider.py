@@ -136,8 +136,8 @@ class GemiSpider(scrapy.Spider):
         for page in search_results:
             lengths, links, prices, locations, brokers = self.extract_fields(page)
 
-            basic_fields = dict()
-            basic_fields['days_on_market'] = days_on_market
+            item_info = dict()
+            item_info['days_on_market'] = days_on_market
 
             for length, link, price, location, broker in zip(lengths, links, prices, locations, brokers):
 
@@ -153,21 +153,21 @@ class GemiSpider(scrapy.Spider):
                 price, length, location, broker = FieldProcessor.clean_basic_fields(price, length, location, broker)
 
                 # fill in the item info
-                item_info = {
+                basic_fields = {
                     'length': length,
                     'location': location,
                     'broker': broker,
                     'link': link
                 }
-                basic_fields.update(item_info)
+                item_info.update(basic_fields)
 
                 # add model and year
                 model_and_year = FieldProcessor.get_model_and_year(link)
-                basic_fields.update(model_and_year)
+                item_info.update(model_and_year)
 
                 # add price and status
                 price_and_status = FieldProcessor.get_price_and_status_lists(price)
-                basic_fields.update(price_and_status)
+                item_info.update(price_and_status)
 
                 # go to the item page to get details
                 if self.should_get_details:
@@ -187,6 +187,8 @@ class GemiSpider(scrapy.Spider):
             self.follow_to_the_next_page(response)
 
     def parse_details(self, response, page):
+        item_info = response.meta
+
         # parse fields
         details = page.css(self.detail_selector).extract()
         full_specs = page.css(self.full_spec_selector).extract()
@@ -194,16 +196,18 @@ class GemiSpider(scrapy.Spider):
         # search for hours
         hours = GemiUtil.extract_hours_from_details(details)
 
-        # add details to the basic fields dict
-        response.meta['full_specs'] = full_specs
-        response.meta['details'] = details
-        response.meta['hours'] = hours
+        # add details to item info
+        details = {'full_specs': full_specs,
+                   'details': details,
+                   'hours': hours}
+        item_info.update(details)
 
         # send the item info to the pipeline
-        yield response.meta
+        yield item_info
 
-    def follow_to_the_next_page(self, response):
-        next_page_href = response.css(self.next_page_button_selector).extract_first()
-        if next_page_href is not None:
-            next_page_url = self.base_url + next_page_href
-            yield response.follow(next_page_url, meta=response.meta, callback=self.parse)
+
+def follow_to_the_next_page(self, response):
+    next_page_href = response.css(self.next_page_button_selector).extract_first()
+    if next_page_href is not None:
+        next_page_url = self.base_url + next_page_href
+        yield response.follow(next_page_url, meta=response.meta, callback=self.parse)
