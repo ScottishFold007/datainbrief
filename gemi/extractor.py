@@ -1,4 +1,4 @@
-from gemi.util import Util
+from gemi.util import TimeManager
 from gemi.processor import Cleaner
 
 
@@ -29,7 +29,7 @@ class FieldExtractor:
     @staticmethod
     def get_price_and_status_lists(price):
         # timestamp the crawl
-        today = Util.get_todays_date().isoformat()
+        today = TimeManager.get_todays_date().isoformat()
         price_list = [(price, today)]
         status_list = [('active', today)]
 
@@ -47,3 +47,20 @@ class FieldExtractor:
             'model': model,
             'year': year,
         }
+
+    @staticmethod
+    def get_hours(description):
+        # search for hours
+        words_for_hour = {'hour', 'time', 'stunde', 'ora', 'heure', 'uur', 'tunnin', 'timme', 'saat', 'hora'}
+
+        if any(word in description for word in words_for_hour):
+            # add details to item info
+            hours = True
+        else:
+            hours = 'no hour info'
+
+        return {
+            'hours': hours
+        }
+
+

@@ -2,8 +2,9 @@
 # packages
 import scrapy
 # self coded modules
-from gemi.processor import ItemProcessor, QueryGenerator
+from gemi.processor import ItemProcessor
 from gemi.extractor import FieldExtractor
+from gemi.util import QueryGenerator
 
 
 class GemiSpider(scrapy.Spider):
@@ -28,13 +29,13 @@ class GemiSpider(scrapy.Spider):
         self.should_get_details = details  # parse details page
         # get urls
         self.start_urls = QueryGenerator.generate_urls_for_search_queries()
-        self.days = [1, 3, 7, 14, 30, 60, 100]
         self.extractor = FieldExtractor()
         self.processor = ItemProcessor()
 
     # Send urls to parse
     def start_requests(self):
-        for url, day in zip(self.start_urls, self.days):
+        days = [1, 3, 7, 14, 30, 60, 100]
+        for url, day in zip(self.start_urls, days):
             yield scrapy.Request(url=url, meta={'days-on-market': day}, callback=self.parse)
 
     def parse(self, response):
@@ -89,17 +90,12 @@ class GemiSpider(scrapy.Spider):
         item_info = response.meta
 
         detail_selector = 'div.boatdetails::text'
-        description = response.css(detail_selector).extract()
+        detail = response.css(detail_selector).extract()
 
-        # search for hours
-        words_for_hour = {'hour', 'time', 'stunde', 'ora', 'heure', 'uur', 'tunnin', 'timme', 'saat', 'hora'}
-
-        if any(word in description for word in words_for_hour):
-            # add details to item info
-            description = {
-                'description': description,
-            }
-            item_info.update(description)
+        hours = FieldExtractor.get_hours(detail)
+        item_info.update(hours)
+        if hours:
+            item_info.update({'detail': detail})
 
         # send the item info to the pipeline
         yield item_info
