@@ -53,7 +53,7 @@ class MongoPipeline(object):
             )
 
     def close_spider(self, spider):
-        # self.record_removed_items()
+        self.record_removed_items()
         self.client.close()
 
     def process_item(self, item, spider):
