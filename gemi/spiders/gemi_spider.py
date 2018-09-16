@@ -15,13 +15,13 @@ class GemiSpider(scrapy.Spider):
     # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
     custom_settings = {
         'ITEM_PIPELINES': {
-            'gemi.pipelines.DuplicatesPipeline': 200,
-            'gemi.pipelines.MongoPipeline': 300  # pipeline with smaller number executed first
+            'gemi.pipelines.DuplicatesPipeline': 200
+            #'gemi.pipelines.MongoPipeline': 300  # pipeline with smaller number executed first
         }
     }
 
     # entry point
-    def __init__(self, next_page=True, details=False, *args, **kwargs):
+    def __init__(self, next_page=True, details=True, *args, **kwargs):
         super(GemiSpider, self).__init__(*args, **kwargs)
         self.base_url = 'https://www.yachtworld.com'
         # control knobs
@@ -51,18 +51,17 @@ class GemiSpider(scrapy.Spider):
         for page in search_results:
             lengths, links, prices, locations, brokers, sale_pending_fields = self.extractor.extract_fields(page)
 
-            item_info = dict()
+            item_info = {}
             item_info['days_on_market'] = days_on_market
 
             for length, link, price, location, broker, sale_pending in zip(lengths, links, prices,
                                                                            locations, brokers,
                                                                            sale_pending_fields):
 
-                item_info = ItemProcessor.update_item_info(length, link, price, location, broker, sale_pending,
+                item_info = self.processor.update_item_info(length, link, price, location, broker, sale_pending,
                                                            item_info)
                 if not item_info:  # just updated already existing item
-                    # continue
-                    pass
+                    continue
 
                 # go to the item page to get details
                 if self.should_get_details:
@@ -93,8 +92,8 @@ class GemiSpider(scrapy.Spider):
         detail = response.css(detail_selector).extract()
 
         hours = FieldExtractor.get_hours(detail)
-        item_info.update(hours)
-        if hours:
+        item_info.update({'hours': hours})
+        if hours == 'hour in description':
             item_info.update({'detail': detail})
 
         # send the item info to the pipeline

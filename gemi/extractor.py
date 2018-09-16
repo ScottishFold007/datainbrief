@@ -1,5 +1,5 @@
 from gemi.util import TimeManager
-from gemi.processor import Cleaner
+from gemi.util import Cleaner
 
 
 class FieldExtractor:
@@ -55,12 +55,9 @@ class FieldExtractor:
 
         if any(word in description for word in words_for_hour):
             # add details to item info
-            hours = True
+            hours = 'hour in description'
         else:
             hours = 'no hour info'
 
-        return {
-            'hours': hours
-        }
-
+        return hours
 
