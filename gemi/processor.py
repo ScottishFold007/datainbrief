@@ -63,6 +63,5 @@ class FieldProcessor(object):
         if last_price != price:
             new_price = (price, today)
             price_list.append(new_price)
-            item['price_list'] = price_list
 
-        return item
+        return price_list

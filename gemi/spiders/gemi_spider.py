@@ -44,10 +44,12 @@ class GemiSpider(scrapy.Spider):
         # get links seen
         self.links_seen = self.db.yachts.distinct('link')
 
+        # set initial status
+
+        # get urls
         self.start_urls, self.days = self.generate_base_query_urls()
 
         # init selectors
-
         # table selector
         self.search_results_table_selector = 'div#searchResultsDetailsABTest'
         # basic field selectors
@@ -55,12 +57,16 @@ class GemiSpider(scrapy.Spider):
         self.length_selector = 'div.make-model a span.length::text'
         self.price_selector = 'div.price::text'
         self.location_selector = 'div.location::text'
+        self.sale_pending = 'div.location span.active_field'
         self.broker_selector = 'div.broker::text'
         # details
         self.detail_selector = 'div.boatdetails::text'
         self.full_spec_selector = 'div.fullspecs::text'
         # next page link
         self.next_page_button_selector = 'div.searchResultsNav span.navNext a.navNext::attr(href)'
+
+    def set_status(self):
+        self.db.yachts.update_many()
 
     # query generator
     def generate_base_query_urls(self):
@@ -118,11 +124,16 @@ class GemiSpider(scrapy.Spider):
         # get the item
         item = self.db.yachts.find_one({"link": link})
         # check the price
-        item = FieldProcessor.check_price_change(item, price)
-        # increment days on market
-        item['days_on_market'] += 7
+        price_list = FieldProcessor.check_price_change(item, price)
         # update only changed fields
-        self.db.yachts.find_one_and_replace({'link': link}, item)
+        self.db.yachts.find_one_and_update(
+            {'link': link},
+            {
+                '$unset': {'price': 1},
+                '$set': {'price_list': price_list},
+                '$inc': {'days_on_market': 7}
+            }
+        )
 
     def parse(self, response):
         # define the data to process
