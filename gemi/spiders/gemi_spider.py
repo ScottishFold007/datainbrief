@@ -40,8 +40,6 @@ class GemiSpider(scrapy.Spider):
         # define the data to process
         search_results_table_selector = 'div#searchResultsDetailsABTest'
         search_results = response.css(search_results_table_selector)
-        # result_count_selector = 'div.searchResultsCount--mobile-container__searchResultsCount'
-        # result_count = response.css(result_count_selector).extract()
 
         try:
             days_on_market = response.meta['days-on-market']
@@ -85,17 +83,12 @@ class GemiSpider(scrapy.Spider):
                 next_page_url = self.base_url + next_page_href
                 yield response.follow(next_page_url, meta=response.meta, callback=self.parse)
 
-    def parse_details(self, response):
+    @staticmethod
+    def parse_details(response):
         item_info = response.meta
 
-        # details
         detail_selector = 'div.boatdetails::text'
-
-        # parse fields
         description = response.css(detail_selector).extract()
-
-        # full_spec_selector = 'div.fullspecs::text'
-        # full_specs = page.css(self.full_spec_selector).extract()
 
         # search for hours
         words_for_hour = {'hour', 'time', 'stunde', 'ora', 'heure', 'uur', 'tunnin', 'timme', 'saat', 'hora'}
@@ -103,7 +96,6 @@ class GemiSpider(scrapy.Spider):
         if any(word in description for word in words_for_hour):
             # add details to item info
             description = {
-                # 'full_specs': full_specs,
                 'description': description,
             }
             item_info.update(description)
