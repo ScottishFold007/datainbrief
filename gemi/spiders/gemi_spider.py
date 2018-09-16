@@ -4,6 +4,8 @@ import scrapy
 # util
 from urllib.parse import urlencode
 from collections import OrderedDict
+# time
+import datetime
 
 # self coded modules
 # db
@@ -15,6 +17,22 @@ from gemi.processor import FieldProcessor
 class GemiSpider(scrapy.Spider):
     name = 'gemi'
     allowed_domains = ['yachtworld.com']
+
+    # init selectors
+    # table selector
+    search_results_table_selector = 'div#searchResultsDetailsABTest'
+    # basic field selectors
+    link_selector = 'div.make-model a::attr(href)'
+    length_selector = 'div.make-model a span.length::text'
+    price_selector = 'div.price::text'
+    location_selector = 'div.location::text'
+    sale_pending = 'div.location span.active_field'
+    broker_selector = 'div.broker::text'
+    # details
+    detail_selector = 'div.boatdetails::text'
+    full_spec_selector = 'div.fullspecs::text'
+    # next page link
+    next_page_button_selector = 'div.searchResultsNav span.navNext a.navNext::attr(href)'
 
     # Configure item pipelines
     # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
@@ -48,22 +66,6 @@ class GemiSpider(scrapy.Spider):
 
         # get urls
         self.start_urls, self.days = self.generate_base_query_urls()
-
-        # init selectors
-        # table selector
-        self.search_results_table_selector = 'div#searchResultsDetailsABTest'
-        # basic field selectors
-        self.link_selector = 'div.make-model a::attr(href)'
-        self.length_selector = 'div.make-model a span.length::text'
-        self.price_selector = 'div.price::text'
-        self.location_selector = 'div.location::text'
-        self.sale_pending = 'div.location span.active_field'
-        self.broker_selector = 'div.broker::text'
-        # details
-        self.detail_selector = 'div.boatdetails::text'
-        self.full_spec_selector = 'div.fullspecs::text'
-        # next page link
-        self.next_page_button_selector = 'div.searchResultsNav span.navNext a.navNext::attr(href)'
 
     def set_status(self):
         self.db.yachts.update_many()
@@ -106,31 +108,20 @@ class GemiSpider(scrapy.Spider):
         for url, day in zip(self.start_urls, self.days):
             yield scrapy.Request(url=url, meta={'days-on-market': day}, callback=self.parse)
 
-    def extract_fields(self, page):
-        # parse fields
-        lengths = page.css(self.length_selector).extract()
-        links = page.css(self.link_selector).extract()
-
-        prices = page.css(self.price_selector).extract()
-        # remove empty prices
-        prices = FieldProcessor.remove_empty_prices(prices)
-
-        locations = page.css(self.location_selector).extract()
-        brokers = page.css(self.broker_selector).extract()
-
-        return lengths, links, prices, locations, brokers
-
-    def update_item_info(self, link, price):
+    def update_item_info(self, link, price, sale_pending):
         # get the item
         item = self.db.yachts.find_one({"link": link})
         # check the price
         price_list = FieldProcessor.check_price_change(item, price)
+        # check status
+        sale_status = FieldProcessor.check_status_change(item, sale_pending)
+
         # update only changed fields
         self.db.yachts.find_one_and_update(
             {'link': link},
             {
                 '$unset': {'price': 1},
-                '$set': {'price_list': price_list},
+                '$set': {'price_list': price_list, 'sale_status': sale_status},
                 '$inc': {'days_on_market': 7}
             }
         )
@@ -147,16 +138,17 @@ class GemiSpider(scrapy.Spider):
             days_on_market = 'unknown'
 
         for page in search_results:
-            lengths, links, prices, locations, brokers = self.extract_fields(page)
+            lengths, links, prices, locations, brokers, sale_pending_fields = self.extract_fields(page)
 
             item_info = dict()
             item_info['days_on_market'] = days_on_market
 
-            for length, link, price, location, broker in zip(lengths, links, prices, locations, brokers):
+            for length, link, price, location, broker, sale_pending in zip(lengths, links, prices, locations, brokers,
+                                                                           sale_pending_fields):
 
                 # track earlier items
                 if link in self.links_seen:
-                    self.update_item_info(link, price)
+                    self.update_item_info(link, price, sale_pending)
                     continue
 
                 # if seen first time
@@ -170,7 +162,9 @@ class GemiSpider(scrapy.Spider):
                     'length': length,
                     'location': location,
                     'broker': broker,
-                    'link': link
+                    'link': link,
+                    'updated': True,
+                    'removed': False
                 }
                 item_info.update(basic_fields)
 
@@ -223,3 +217,19 @@ class GemiSpider(scrapy.Spider):
         if next_page_href is not None:
             next_page_url = self.base_url + next_page_href
             yield response.follow(next_page_url, meta=response.meta, callback=self.parse)
+
+    @staticmethod
+    def extract_fields(this, page):
+        # parse fields
+        lengths = page.css(this.length_selector).extract()
+        links = page.css(this.link_selector).extract()
+
+        prices = page.css(this.price_selector).extract()
+        # remove empty prices
+        prices = FieldProcessor.remove_empty_prices(prices)
+
+        locations = page.css(this.location_selector).extract()
+        sale_pending_fields = page.css(this.sale_pending).extract()
+        brokers = page.css(this.broker_selector).extract()
+
+        return lengths, links, prices, locations, brokers, sale_pending_fields

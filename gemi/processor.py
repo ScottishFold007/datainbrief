@@ -65,3 +65,17 @@ class FieldProcessor(object):
             price_list.append(new_price)
 
         return price_list
+
+    @staticmethod
+    def check_status_change(item, sale_pending):
+        today = datetime.datetime.now().date()
+        week_ago = today - datetime.timedelta(days=7)
+        try:
+            sale_status = item['sale_status']
+        except KeyError:
+            sale_status = [('active', week_ago)]
+        if sale_pending:
+            new_status = ('sale_pending', today)
+            sale_status.append(new_status)
+
+        return sale_status
