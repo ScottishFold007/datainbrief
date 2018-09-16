@@ -122,7 +122,7 @@ class GemiSpider(scrapy.Spider):
         # increment days on market
         item['days_on_market'] += 7
         # update only changed fields
-        self.db.test.find_one_and_replace({'link': link}, item)
+        self.db.yachts.find_one_and_replace({'link': link}, item)
 
     def parse(self, response):
         # define the data to process
@@ -196,7 +196,7 @@ class GemiSpider(scrapy.Spider):
         full_specs = page.css(self.full_spec_selector).extract()
 
         # search for hours
-        hours = GemiUtil.extract_hours_from_details(details)
+        hours = FieldProcessor.extract_hours_from_details(details)
 
         # add details to item info
         details = {'full_specs': full_specs,
@@ -207,9 +207,8 @@ class GemiSpider(scrapy.Spider):
         # send the item info to the pipeline
         yield item_info
 
-
-def follow_to_the_next_page(self, response):
-    next_page_href = response.css(self.next_page_button_selector).extract_first()
-    if next_page_href is not None:
-        next_page_url = self.base_url + next_page_href
-        yield response.follow(next_page_url, meta=response.meta, callback=self.parse)
+    def follow_to_the_next_page(self, response):
+        next_page_href = response.css(self.next_page_button_selector).extract_first()
+        if next_page_href is not None:
+            next_page_url = self.base_url + next_page_href
+            yield response.follow(next_page_url, meta=response.meta, callback=self.parse)

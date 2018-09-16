@@ -17,5 +17,6 @@ class GemiItem(Item):
     location = Field()
     length = Field()
     broker = Field()
+    status = Field()
 
 

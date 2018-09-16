@@ -49,11 +49,20 @@ class FieldProcessor(object):
 
     @staticmethod
     def check_price_change(item, price):
-        price_list = item['price_list']
-        last_price = price_list[-1][0]  # get the value of the last price (price,time) tuples
+        today = datetime.datetime.now().date()
+        try:
+            price_list = item['price_list']
+            last_price = price_list[-1][0]  # get the value of the last price (price,time) tuples
+        except KeyError:
+            # remove the price and return its value
+            last_price = item.pop('price', None)
+            week_ago = today - datetime.timedelta(days=7)
+            # create price list
+            price_list = [(last_price, week_ago)]
+
         if last_price != price:
-            date = datetime.datetime.now().date()
-            new_price = (price, date)
+            new_price = (price, today)
             price_list.append(new_price)
+            item['price_list'] = price_list
 
         return item
