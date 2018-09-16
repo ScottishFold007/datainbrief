@@ -22,18 +22,17 @@ class Database(object):
     def remove_duplicates(self):
         print('removing dups..')
 
-        cursor = self.db.yachts.aggregate(
-            [
-                {"$group": {"_id": "$link", "unique_ids": {"$addToSet": "$_id"}, "count": {"$sum": 1}}},
-                {"$match": {"count": {"$gte": 2}}}
-            ]
-        )
+        pipeline = [
+            {"$group": {"_id": "$link", "unique_ids": {"$addToSet": "$_id"}, "count": {"$sum": 1}}},
+            {"$match": {"count": {"$gte": 2}}}
+        ]
+        cursor = self.db.yachts.aggregate(pipeline)
 
         response = []
         for doc in cursor:
             del doc["unique_ids"][0]
-            for id in doc["unique_ids"]:
-                response.append(id)
+            for unique_id in doc["unique_ids"]:
+                response.append(unique_id)
 
         self.db.yachts.remove({"_id": {"$in": response}})
 
@@ -41,7 +40,7 @@ class Database(object):
 
     def rename_field(self, oldname, newname):
         self.db.yachts.update_many({}, {'$rename': {oldname: newname}})
-        print('renamed %s to %s' %(oldname,newname))
+        print('renamed %s to %s' % (oldname, newname))
 
     def create_index(self):
         self.db.yachts.create_index([('link', TEXT)], unique=True)  # prevent duplicate ads next time

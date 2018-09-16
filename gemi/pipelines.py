@@ -8,9 +8,10 @@ from pymongo.errors import DuplicateKeyError
 from scrapy.exceptions import DropItem
 
 from gemi.database import Database
+# time
+import datetime
 
 
-# NECESSARY???
 # only checks duplicates in the current job
 class DuplicatesPipeline(object):
 
@@ -33,8 +34,22 @@ class MongoPipeline(object):
     def open_spider(self, spider):
         pass
 
+    def record_removed_items(self):
+        today = datetime.datetime.now().date()
+        # get untouched items
+        not_updated_items = self.db.yachts.find({'updated': False})
+        # update info for every item
+        for item in not_updated_items:
+            sale_status = item['sale_status'].append(('sold', today))
+            self.db.yachts.update_one(
+                {'link': item['link']},
+                {
+                    '$set': {'removed': True, 'sale_status': sale_status}
+                }
+            )
+
     def close_spider(self, spider):
-        # how to update that index
+        self.record_removed_items()
         self.client.close()
 
     def process_item(self, item, spider):

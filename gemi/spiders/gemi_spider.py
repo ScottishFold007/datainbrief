@@ -38,7 +38,7 @@ class GemiSpider(scrapy.Spider):
     # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
     custom_settings = {
         'ITEM_PIPELINES': {
-            # 'gemi.pipelines.DuplicatesPipeline': 200,
+            'gemi.pipelines.DuplicatesPipeline': 200,
             'gemi.pipelines.MongoPipeline': 300  # pipeline with smaller number executed first
         }
     }
@@ -62,13 +62,16 @@ class GemiSpider(scrapy.Spider):
         # get links seen
         self.links_seen = self.db.yachts.distinct('link')
 
-        # set initial status
+        # set all as not updated first
+        self.db.yachts.update_many(
+            {},  # select all
+            {
+                '$set': {'updated': False}
+            }
+        )
 
         # get urls
         self.start_urls, self.days = self.generate_base_query_urls()
-
-    def set_status(self):
-        self.db.yachts.update_many()
 
     # query generator
     def generate_base_query_urls(self):
@@ -118,10 +121,10 @@ class GemiSpider(scrapy.Spider):
 
         # update only changed fields
         self.db.yachts.find_one_and_update(
-            {'link': link},
+            {'link': link},  # filter
             {
-                '$unset': {'price': 1},
-                '$set': {'price_list': price_list, 'sale_status': sale_status},
+                '$unset': {'price': ""},  # remove price field
+                '$set': {'price_list': price_list, 'sale_status': sale_status, 'updated': True},
                 '$inc': {'days_on_market': 7}
             }
         )
