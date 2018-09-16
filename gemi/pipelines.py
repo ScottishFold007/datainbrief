@@ -10,7 +10,6 @@ from scrapy.exceptions import DropItem
 from gemi.database import Database
 
 
-
 # NECESSARY???
 # only checks duplicates in the current job
 class DuplicatesPipeline(object):

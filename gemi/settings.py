@@ -34,7 +34,7 @@ LOG_LEVEL = 'DEBUG'
 # Configure a delay for requests for the same website (default: 0)
 # See https://doc.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-DOWNLOAD_DELAY = 3
+DOWNLOAD_DELAY = 2
 # The download delay setting will honor only one of:
 #CONCURRENT_REQUESTS_PER_DOMAIN = 16
 #CONCURRENT_REQUESTS_PER_IP = 16
@@ -63,6 +63,10 @@ DOWNLOAD_DELAY = 3
 #    'gemi.middlewares.GemiDownloaderMiddleware': 543,
 #}
 
+DOWNLOADER_MIDDLEWARES = {'scrapy_crawlera.CrawleraMiddleware': 300}
+CRAWLERA_ENABLED = True
+CRAWLERA_APIKEY = 'd7c7bd4fc59540adb1f53eee8403bebc'
+
 # Enable or disable extensions
 # See https://doc.scrapy.org/en/latest/topics/extensions.html
 #EXTENSIONS = {
@@ -75,9 +79,9 @@ DOWNLOAD_DELAY = 3
 # See https://doc.scrapy.org/en/latest/topics/autothrottle.html
 AUTOTHROTTLE_ENABLED = False
 # The initial download delay
-AUTOTHROTTLE_START_DELAY = 3
+#AUTOTHROTTLE_START_DELAY = 3
 # The maximum download delay to be set in case of high latencies
-AUTOTHROTTLE_MAX_DELAY = 5
+#AUTOTHROTTLE_MAX_DELAY = 5
 # The average number of requests Scrapy should be sending in parallel to
 # each remote server
 #AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0
