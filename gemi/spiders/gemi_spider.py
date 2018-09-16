@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
+# packages
 import scrapy
 # util
 from urllib.parse import urlencode
 from collections import OrderedDict
-from gemi.util import GemiUtil
+
+# self coded modules
 # db
 from gemi.database import Database
 # processor
@@ -105,7 +107,7 @@ class GemiSpider(scrapy.Spider):
 
         prices = page.css(self.price_selector).extract()
         # remove empty prices
-        prices = GemiUtil.remove_empty_prices(prices)
+        prices = FieldProcessor.remove_empty_prices(prices)
 
         locations = page.css(self.location_selector).extract()
         brokers = page.css(self.broker_selector).extract()
@@ -116,7 +118,7 @@ class GemiSpider(scrapy.Spider):
         # get the item
         item = self.db.yachts.find_one({"link": link})
         # check the price
-        item = GemiUtil.check_price_change(item, price)
+        item = FieldProcessor.check_price_change(item, price)
         # increment days on market
         item['days_on_market'] += 7
         # update only changed fields
