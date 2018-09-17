@@ -45,7 +45,7 @@ class QueryGenerator:
             'toPrice': 8000000,
             'luom': 126,  # units feet, meter=127
             'currencyid': 100,  # US dollar
-            'ps': 200  # entries per page
+            'ps': 300  # entries per page
         }
 
         within_x_days = [(1, 1535580789155), (3, 1535407989155), (7, 1535062389155),

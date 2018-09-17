@@ -5,6 +5,8 @@ import scrapy
 from gemi.processor import ItemProcessor
 from gemi.extractor import FieldExtractor
 from gemi.util import QueryGenerator
+from gemi.database import get_db
+
 
 
 class GemiSpider(scrapy.Spider):
@@ -29,6 +31,19 @@ class GemiSpider(scrapy.Spider):
         self.start_urls = QueryGenerator.generate_urls_for_search_queries()
         self.extractor = FieldExtractor()
         self.processor = ItemProcessor()
+        # init db
+        self.db = get_db()
+        # get links seen
+        self.set_initial_status()
+
+    def set_initial_status(self):
+        # set all as not updated first
+        self.db.yachts.update_many(
+            {},  # select unsold items
+            {
+                '$set': {'updated': False}
+            }
+        )
 
     # Send urls to parse
     def start_requests(self):

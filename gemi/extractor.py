@@ -26,23 +26,13 @@ class FieldExtractor:
 
         return lengths, links, prices, locations, brokers, sale_pending_fields
 
-    @staticmethod
-    def get_price_and_status_lists(price):
-        # timestamp the crawl
-        today = TimeManager.get_todays_date().isoformat()
-        price_list = [(price, today)]
-        status_list = [('active', today)]
 
-        return {'price_list': price_list,
-                'status_list': status_list
-                }
 
     @staticmethod
     def get_model_and_year(link):
         # get the year and model from the link
         split_link = link.split('/')
         year, model = split_link[2], split_link[3]
-
         return {
             'model': model,
             'year': year,

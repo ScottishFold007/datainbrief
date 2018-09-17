@@ -1,7 +1,9 @@
 from pymongo import MongoClient, IndexModel, ASCENDING, DESCENDING, TEXT
 
+db = get_db()
 
-def remove_duplicates(db):
+
+def remove_duplicates():
     print('removing dups..')
 
     pipeline = [
@@ -21,26 +23,26 @@ def remove_duplicates(db):
     print('removed dups.')
 
 
-def rename_field(db, oldname, newname):
+def rename_field(oldname, newname):
     db.yachts.update_many({}, {'$rename': {oldname: newname}})
     print('renamed %s to %s' % (oldname, newname))
 
 
-def create_index(db):
+def create_index():
     db.yachts.create_index([('link', TEXT)], unique=True)  # prevent duplicate ads next time
     print('created index')
 
 
-def drop_index(db):
+def drop_index():
     db.yachts.drop_index([('link', TEXT)])
     print('dropped index')
 
 
-def get_index_info(db):
+def get_index_info():
     print(db.yachts.index_information())
 
 
-def remove_based_on_existence(db):
+def remove_based_on_existence():
     db.yachts.delete_many({"year": {"$exists": False}})
 
 
@@ -57,11 +59,9 @@ def get_db_client():
 
 def get_db():
     client = get_db_client()
-    db = client['gemi']
-    return db
+    database = client['gemi']
+    return database
 
 
 if __name__ == "__main__":
-    db = get_db()
-    create_index(db)
     pass

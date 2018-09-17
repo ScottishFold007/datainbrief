@@ -6,20 +6,9 @@ from gemi.util import TimeManager, Cleaner
 
 class ItemProcessor:
     def __init__(self):
-        # init db
         self.db = get_db()
         # get links seen
         self.links_seen = self.db.yachts.distinct('link')
-        self.set_initial_status()
-
-    def set_initial_status(self):
-        # set all as not updated first
-        self.db.yachts.update_many(
-            {},  # select all
-            {
-                '$set': {'updated': False}
-            }
-        )
 
     def update_item(self, length, link, price, location, broker, sale_pending, item):
         # track earlier items
@@ -37,6 +26,7 @@ class ItemProcessor:
     def create_new_item(length, link, price, location, broker, item):
         # clean
         price, length, location, broker = Cleaner.clean_basic_fields(price, length, location, broker)
+        todays_date = TimeManager.get_todays_date().isoformat()
 
         # fill in the item info
         basic_fields = {
@@ -44,18 +34,21 @@ class ItemProcessor:
             'location': location,
             'broker': broker,
             'link': link,
+            'crawled': todays_date,
             'updated': True,
-            'removed': False
+            'removed': False,
+            'sold': False,
+            'sale-pending': False,
+            'price-changed': False,
+            'price': price,
+            'price_list': list(),
+            'active': True
         }
         item.update(basic_fields)
 
         # add model and year
         model_and_year = FieldExtractor.get_model_and_year(link)
         item.update(model_and_year)
-
-        # add price and status
-        price_and_status = FieldExtractor.get_price_and_status_lists(price)
-        item.update(price_and_status)
 
         return item
 
@@ -73,7 +66,7 @@ class ItemProcessor:
             {
                 '$unset': {'price': ""},  # remove price field
                 '$set': {'price_list': price_list, 'sale_status': sale_status, 'updated': True, 'removed': False},
-                '$inc': {'days_on_market': 8}
+                '$inc': {'days_on_market': 1}
             }
         )
 
