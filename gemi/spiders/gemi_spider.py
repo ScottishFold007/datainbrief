@@ -56,14 +56,14 @@ class GemiSpider(scrapy.Spider):
                                                                            locations, brokers,
                                                                            sale_pending_fields):
 
-                item = self.processor.update_item(length, link, price, location,
-                                                  broker, sale_pending, item)
-                if not item:
+                new_item = self.processor.update_item(length, link, price, location,
+                                                      broker, sale_pending, item)
+                if not new_item:
                     # just updated already existing item
                     continue
 
                 # send the item to the pipeline
-                yield item
+                yield new_item
 
         # follow to the next page
         if self.next_page:

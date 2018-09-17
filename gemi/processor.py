@@ -25,11 +25,16 @@ class ItemProcessor:
         # track earlier items
         if link in self.links_seen:
             self.update_already_existing_item(link, price, sale_pending)
-            return None
+            item = None
+        else:
+            # if seen first time
+            self.links_seen.append(link)
+            item = self.create_new_item(length, link, price, location, broker, item)
 
-        # if seen first time
-        self.links_seen.append(link)
+        return item
 
+    @staticmethod
+    def create_new_item(length, link, price, location, broker, item):
         # clean
         price, length, location, broker = Cleaner.clean_basic_fields(price, length, location, broker)
 
