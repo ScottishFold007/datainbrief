@@ -15,7 +15,7 @@ class GemiSpider(scrapy.Spider):
     # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
     custom_settings = {
         'ITEM_PIPELINES': {
-            'gemi.pipelines.DuplicatesPipeline': 200,
+            # 'gemi.pipelines.DuplicatesPipeline': 200,
             'gemi.pipelines.NewItemPipeline': 300  # pipeline with smaller number executed first
         }
     }
