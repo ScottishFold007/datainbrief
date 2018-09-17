@@ -67,8 +67,8 @@ class ItemProcessor:
             {'link': link},  # filter
             {
                 '$unset': {'price': ""},  # remove price field
-                '$set': {'price_list': price_list, 'sale_status': sale_status, 'updated': True},
-                '$inc': {'days_on_market': 7}
+                '$set': {'price_list': price_list, 'sale_status': sale_status, 'updated': True, 'removed': False},
+                '$inc': {'days_on_market': 8}
             }
         )
 

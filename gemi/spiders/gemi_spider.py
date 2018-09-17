@@ -15,8 +15,8 @@ class GemiSpider(scrapy.Spider):
     # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
     custom_settings = {
         'ITEM_PIPELINES': {
-            'gemi.pipelines.DuplicatesPipeline': 200
-            #'gemi.pipelines.MongoPipeline': 300  # pipeline with smaller number executed first
+            'gemi.pipelines.DuplicatesPipeline': 200,
+            'gemi.pipelines.MongoPipeline': 300  # pipeline with smaller number executed first
         }
     }
 
@@ -94,6 +94,7 @@ class GemiSpider(scrapy.Spider):
         hours = FieldExtractor.get_hours(detail)
         item_info.update({'hours': hours})
         if hours == 'hour in description':
+            detail = " ".join(detail.split())
             item_info.update({'detail': detail})
 
         # send the item info to the pipeline
