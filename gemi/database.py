@@ -63,5 +63,5 @@ def get_db():
 
 if __name__ == "__main__":
     db = get_db()
-    remove_based_on_existence(db)
+    create_index(db)
     pass

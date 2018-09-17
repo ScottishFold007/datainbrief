@@ -12,11 +12,15 @@ class GemiItem(Item):
     # define the fields for your item here like:
     model = Field()
     year = Field()
-    price = Field()
+    price_list = Field()
     link = Field()
     location = Field()
     length = Field()
     broker = Field()
-    status = Field()
+    status_list = Field()
+    detail = Field()
+    hours = Field()
+
+
 
 

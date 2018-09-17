@@ -21,7 +21,7 @@ class ItemProcessor:
             }
         )
 
-    def update_item_info(self, length, link, price, location, broker, sale_pending, item_info):
+    def update_item(self, length, link, price, location, broker, sale_pending, item):
         # track earlier items
         if link in self.links_seen:
             self.update_already_existing_item(link, price, sale_pending)
@@ -42,17 +42,17 @@ class ItemProcessor:
             'updated': True,
             'removed': False
         }
-        item_info.update(basic_fields)
+        item.update(basic_fields)
 
         # add model and year
         model_and_year = FieldExtractor.get_model_and_year(link)
-        item_info.update(model_and_year)
+        item.update(model_and_year)
 
         # add price and status
         price_and_status = FieldExtractor.get_price_and_status_lists(price)
-        item_info.update(price_and_status)
+        item.update(price_and_status)
 
-        return item_info
+        return item
 
     def update_already_existing_item(self, link, price, sale_pending):
         # get the item
@@ -83,7 +83,7 @@ class ChangeTracker:
         except KeyError:
             # remove the price and return its value
             last_price = item.pop('price', None)
-            week_ago = TimeManager.get_date_of_x_days_ago(7)
+            week_ago = TimeManager.get_date_of_x_days_ago(8)
             # create price list
             price_list = [(last_price, week_ago.isoformat())]
 
@@ -96,7 +96,7 @@ class ChangeTracker:
     @staticmethod
     def check_status_change(item, sale_pending):
         today = TimeManager.get_todays_date()
-        week_ago = TimeManager.get_date_of_x_days_ago(7)
+        week_ago = TimeManager.get_date_of_x_days_ago(8)
         try:
             sale_status = item['sale_status']
         except KeyError:
