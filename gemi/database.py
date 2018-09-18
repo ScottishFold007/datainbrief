@@ -1,5 +1,23 @@
 from pymongo import MongoClient, IndexModel, ASCENDING, DESCENDING, TEXT
 
+
+def get_db_client():
+    client = MongoClient(host='mongodb://<dbuser>:<dbpassword>@ds237072.mlab.com:37072/gemi',
+                         port=47450,
+                         username='roxy',
+                         password='gemicik1',
+                         authSource='gemi',
+                         authMechanism='SCRAM-SHA-1')
+
+    return client
+
+
+def get_db():
+    client = get_db_client()
+    database = client['gemi']
+    return database
+
+
 db = get_db()
 
 
@@ -46,22 +64,14 @@ def remove_based_on_existence():
     db.yachts.delete_many({"year": {"$exists": False}})
 
 
-def get_db_client():
-    client = MongoClient(host='mongodb://<dbuser>:<dbpassword>@ds237072.mlab.com:37072/gemi',
-                         port=47450,
-                         username='roxy',
-                         password='gemicik1',
-                         authSource='gemi',
-                         authMechanism='SCRAM-SHA-1')
-
-    return client
-
-
-def get_db():
-    client = get_db_client()
-    database = client['gemi']
-    return database
+def remove_field(field_name):
+    db.yachts.update(
+        {},
+        {
+            '$unset': {field_name: ""}
+        },
+        multi=True
+    )
 
 
 if __name__ == "__main__":
-    pass
