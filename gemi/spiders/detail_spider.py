@@ -4,6 +4,8 @@ import scrapy
 from gemi.extractor import FieldExtractor
 from gemi.database import get_db
 
+import gemi.detail_processor as processor
+
 
 class DetailSpider(scrapy.Spider):
     name = 'detail'
@@ -24,9 +26,11 @@ class DetailSpider(scrapy.Spider):
         self.db = get_db()
 
     def get_detail_links(self):
-        links = self.db.yachts.find('link')
+        links = self.db.yachts.distinct('link')
         urls = list()
         for link in links:
+            if 'http' in link: # already ok
+                continue
             url = self.base_url + link
             urls.append(url)
         return urls
@@ -39,7 +43,7 @@ class DetailSpider(scrapy.Spider):
     def parse(self, response):
         detail_selector = 'div.boatdetails::text'
         detail = response.css(detail_selector).extract()
-        hours = FieldExtractor.get_hours(detail)
+        hours = processor.get_hours(detail)
         item= dict()
         item.update({'hours': hours})
         if hours == 'hour in description':
