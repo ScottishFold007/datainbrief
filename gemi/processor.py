@@ -35,14 +35,15 @@ class ItemProcessor:
             'broker': broker,
             'link': link,
             'crawled': todays_date,
-            'updated': True,
-            'removed': False,
-            'sold': False,
-            'sale-pending': False,
-            'price-changed': False,
-            'price': price,
-            'price_list': list(),
-            'active': True
+            'status':{
+                'active': True,
+                'updated': True,
+                'removed': False,
+                'sold': False,
+                'sale-pending': False,
+                'price-changed': False
+            },
+            'price': price
         }
         item.update(basic_fields)
 
