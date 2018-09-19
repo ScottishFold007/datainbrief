@@ -1,4 +1,4 @@
-from pymongo import MongoClient, IndexModel, ASCENDING, DESCENDING, TEXT, HASHED
+from pymongo import MongoClient
 
 
 def get_db_client():

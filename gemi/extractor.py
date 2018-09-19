@@ -26,28 +26,18 @@ class FieldExtractor:
 
         return lengths, links, prices, locations, brokers, sale_pending_fields
 
-
-
     @staticmethod
     def get_model_and_year(link):
         # get the year and model from the link
         split_link = link.split('/')
-        year, model = split_link[2], split_link[3]
+        year, manufacturer_and_model = split_link[2], split_link[3]
+        parts = manufacturer_and_model.split('-')
+        manufacturer = parts[0]
+        model = " ".join(parts[1:-1])
         return {
+            'manufacturer': manufacturer,
             'model': model,
             'year': year,
         }
 
-    @staticmethod
-    def get_hours(description):
-        # search for hours
-        words_for_hour = {'hour', 'time', 'stunde', 'ora', 'heure', 'uur', 'tunnin', 'timme', 'saat', 'hora'}
-
-        if any(word in description for word in words_for_hour):
-            # add details to item info
-            hours = 'hour in description'
-        else:
-            hours = 'no hour info'
-
-        return hours
 
