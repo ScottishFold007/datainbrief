@@ -78,7 +78,8 @@ class ItemProcessor:
 
         # check last update
         last_updated = TimeManager.str_to_date(item['dates']['last-updated'])
-        if last_updated == self.todays_date():  # already updated today
+        if last_updated == self.todays_date:  # already updated today
+            print('ALREADY')
             return True
 
         # check the price
