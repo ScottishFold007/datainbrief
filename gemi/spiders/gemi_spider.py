@@ -2,8 +2,8 @@
 # packages
 import scrapy
 # self coded modules
-from gemi.gemi_spider_processors.basic_processor import ItemProcessor
-from gemi.gemi_spider_processors.extractor import FieldExtractor
+from gemi.gemi_spider_processors.data_processor import ItemProcessor
+from gemi.gemi_spider_processors.data_extractor import FieldExtractor
 from gemi.gemi_spider_processors.util import QueryGenerator
 from gemi.database import get_db
 
@@ -21,19 +21,9 @@ class GemiSpider(scrapy.Spider):
         self.start_urls = QueryGenerator.generate_urls_for_search_queries()
         self.extractor = FieldExtractor()
         self.processor = ItemProcessor()
-        # init db
-        self.db = get_db()
-        # get links seen
-        self.set_initial_status()
 
-    def set_initial_status(self):
-        # set all as not updated first
-        self.db.yachts.update_many(
-            {},  # select unsold items
-            {
-                '$set': {'status.updated': False}
-            }
-        )
+
+
 
     # Send urls to parse
     def start_requests(self):
@@ -44,22 +34,17 @@ class GemiSpider(scrapy.Spider):
     def parse(self, response):
         # define the data to process
         search_results_table_selector = 'div#searchResultsDetailsABTest'
-        search_results = response.css(search_results_table_selector)
+        search_results_table = response.css(search_results_table_selector)
+        days_on_market = response.meta['days-on-market']
 
-        try:
-            days_on_market = response.meta['days-on-market']
-        except KeyError:
-            days_on_market = 'unknown'
-
-        for page in search_results:
+        for page in search_results_table:
             lengths, links, prices, locations, brokers, sale_pending_fields = self.extractor.extract_fields(page)
-
 
             for length, link, price, location, broker, sale_pending in zip(lengths, links, prices,
                                                                            locations, brokers,
                                                                            sale_pending_fields):
                 self.processor.update_and_save_item(length, link, price, location,
-                                           broker, sale_pending, days_on_market)
+                                                    broker, sale_pending, days_on_market)
 
                 yield True
 

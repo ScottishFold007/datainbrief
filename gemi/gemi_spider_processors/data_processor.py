@@ -1,6 +1,6 @@
 # db
 from gemi.database import get_db
-from gemi.gemi_spider_processors.extractor import FieldExtractor
+from gemi.gemi_spider_processors.data_extractor import FieldExtractor
 from gemi.gemi_spider_processors.util import TimeManager, Cleaner
 from pymongo.errors import DuplicateKeyError
 
@@ -11,6 +11,15 @@ class ItemProcessor:
         # get links seen
         self.links_seen = self.db.yachts.distinct('link')
         self.todays_date = TimeManager.get_todays_date().isoformat()
+
+    def set_initial_status(self):
+        # set all as not updated first
+        self.db.yachts.update_many(
+            {},  # select unsold items
+            {
+                '$set': {'status.updated': False}
+            }
+        )
 
     def update_and_save_item(self, length, link, price, location, broker, sale_pending, days_on_market):
         # track earlier items
@@ -74,6 +83,7 @@ class ItemProcessor:
             updates['dates.sale_pending'] = self.todays_date
 
         updates['updated'] = True
+        updates['dates.last-updated'] = self.todays_date
 
         self.save_updated_item(link, updates)
 

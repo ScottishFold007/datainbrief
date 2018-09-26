@@ -25,7 +25,7 @@ class DuplicatesPipeline(object):
             return item
 
 
-class NewItemPipeline(object):
+class ItemPipeline(object):
 
     def __init__(self):
         self.client = get_db_client()
