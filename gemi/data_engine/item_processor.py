@@ -75,9 +75,15 @@ class ItemProcessor:
 
         # self.save_new_item(item)
 
-    def update_already_existing_item(self, link, price, sale_pending):
+    def is_already_updated(self, item):
+        last_updated = TimeManager.str_to_date(item['dates']['last-updated'])
+        if last_updated == self.todays_date:  # already updated today
+            print(last_updated.isoformat(), 'already updated today')
+            return True
 
+    def update_already_existing_item(self, link, price, sale_pending):
         updates = dict()
+
         # get the item
         item = self.db[self.collection_name].find_one({"link": link})
 
@@ -85,9 +91,7 @@ class ItemProcessor:
             return True
 
         # check last update
-        last_updated = TimeManager.str_to_date(item['dates']['last-updated'])
-        if last_updated == self.todays_date:  # already updated today
-            print(last_updated.isoformat(), 'already updated today')
+        if self.is_already_updated(item):
             return True
 
         # check the price
@@ -95,7 +99,7 @@ class ItemProcessor:
 
         if last_price != price:
             updates['status.price_changed'] = True
-            updates['price'] = price
+            updates['price'] = Cleaner.remove_empty_chars_and_new_lines(list(price))
             updates['dates.price_changed'] = self.todays_date
 
         # check sale status
