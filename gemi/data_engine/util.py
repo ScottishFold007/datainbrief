@@ -19,9 +19,9 @@ class TimeManager:
 
 class Cleaner:
     @staticmethod
-    def clean_basic_fields(price, length, location, broker):
+    def remove_empty_chars_and_new_lines(fields):
         # clean the fields
-        cleaned_fields = list(map(lambda field: " ".join(field.split()), [price, length, location, broker]))
+        cleaned_fields = list(map(lambda field: " ".join(field.split()), fields))
         return cleaned_fields
 
     @staticmethod

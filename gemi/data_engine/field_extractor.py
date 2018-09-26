@@ -26,13 +26,27 @@ class FieldExtractor:
         return lengths, links, prices, locations, brokers, sale_pending_fields
 
     @staticmethod
-    def get_maker_model_and_year(link):
+    def get_maker_model_and_year(sub_link):
         # get the year and model from the link
-        split_link = link.split('/')
+        split_link = sub_link.split('/')
         year, maker_and_model = split_link[2], split_link[3]
         parts = maker_and_model.split('-')
         maker = parts[0]
         model = " ".join(parts[1:-1])
         return maker, model, year
+
+    @staticmethod
+    def extract_city_state_and_country_from_location(location):
+        state = ""
+
+        location_parts = location.split(',')
+
+        country = location_parts[-1]
+        city = location_parts[0]
+
+        if len(location_parts) == 3:
+            state = location_parts[2]
+
+        return city, state, country
 
 

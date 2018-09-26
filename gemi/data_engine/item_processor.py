@@ -29,8 +29,8 @@ class ItemProcessor:
 
     def update_and_save_item_data(self, item_data):
         length, sub_link, price, location, broker, sale_pending, days_on_market = item_data
-        link = self.base_url + sub_link
         # track earlier items
+        link = self.base_url + sub_link
         if link in self.links_seen:  # seen before
             self.update_already_existing_item(link, price, sale_pending)
         else:
@@ -40,13 +40,16 @@ class ItemProcessor:
 
     def create_new_item(self, length, sub_link, link, price, location, broker, days_on_market):
         # clean
-        price, length, location, broker = Cleaner.clean_basic_fields(price, length, location, broker)
+        price, length, location, broker = Cleaner.remove_empty_chars_and_new_lines([price, length, location, broker])
         maker, model, year = FieldExtractor.get_maker_model_and_year(sub_link)
-
+        city, state, country = FieldExtractor.extract_city_state_and_country_from_location(location)
         # fill in the item info
         item = {
             'length': length,
             'location': location,
+            'city': city,
+            'state': state,
+            'country': country,
             'broker': broker,
             'link': link,
             'status': {
@@ -68,6 +71,8 @@ class ItemProcessor:
             'days_on_market': days_on_market
         }
 
+        print('new item: ', item)
+
         # self.save_new_item(item)
 
     def update_already_existing_item(self, link, price, sale_pending):
@@ -76,10 +81,13 @@ class ItemProcessor:
         # get the item
         item = self.db[self.collection_name].find_one({"link": link})
 
+        if not item:
+            return True
+
         # check last update
         last_updated = TimeManager.str_to_date(item['dates']['last-updated'])
         if last_updated == self.todays_date:  # already updated today
-            print('ALREADY')
+            print(last_updated.isoformat(), 'already updated today')
             return True
 
         # check the price
@@ -98,6 +106,8 @@ class ItemProcessor:
         updates['updated'] = True
         updates['status.removed'] = False
         updates['dates.last-updated'] = self.todays_date
+
+        print('updated: ', updates)
 
         # self.save_updated_item(link, updates)
 
