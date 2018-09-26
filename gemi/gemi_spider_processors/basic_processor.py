@@ -1,7 +1,8 @@
 # db
-from gemi.data_engine.database import get_db
-from gemi.data_engine.extractor import FieldExtractor
-from gemi.data_engine.util import TimeManager, Cleaner
+from gemi.database import get_db
+from gemi.gemi_spider_processors.extractor import FieldExtractor
+from gemi.gemi_spider_processors.util import TimeManager, Cleaner
+from pymongo.errors import DuplicateKeyError
 
 
 class ItemProcessor:
@@ -9,24 +10,22 @@ class ItemProcessor:
         self.db = get_db()
         # get links seen
         self.links_seen = self.db.yachts.distinct('link')
+        self.todays_date = TimeManager.get_todays_date().isoformat()
 
-    def update_item(self, length, link, price, location, broker, sale_pending, item):
+    def update_and_save_item(self, length, link, price, location, broker, sale_pending, days_on_market):
         # track earlier items
         if link in self.links_seen:
             self.update_already_existing_item(link, price, sale_pending)
-            item = None
         else:
             # if seen first time
             self.links_seen.append(link)
-            item = self.create_new_item(length, link, price, location, broker, item)
+            self.create_new_item(length, link, price, location, broker, days_on_market)
 
-        return item
-
-    @staticmethod
-    def create_new_item(length, link, price, location, broker, item):
+    def create_new_item(self, length, link, price, location, broker, days_on_market):
+        item = dict()
+        item['days_on_market'] = days_on_market
         # clean
         price, length, location, broker = Cleaner.clean_basic_fields(price, length, location, broker)
-        todays_date = TimeManager.get_todays_date().isoformat()
 
         # fill in the item info
         basic_fields = {
@@ -43,8 +42,8 @@ class ItemProcessor:
                 'price-changed': False
             },
             'dates': {
-                'crawled': todays_date,
-                'last-updated': todays_date
+                'crawled': self.todays_date,
+                'last-updated': self.todays_date
             },
             'price': price
         }
@@ -54,12 +53,11 @@ class ItemProcessor:
         model_and_year = FieldExtractor.get_model_and_year(link)
         item.update(model_and_year)
 
-        return item
+        self.save_new_item(item)
 
     def update_already_existing_item(self, link, price, sale_pending):
 
         updates = dict()
-        todays_date = TimeManager.get_todays_date().isoformat()
         # get the item
         item = self.db.yachts.find_one({"link": link})
         # check the price
@@ -68,15 +66,25 @@ class ItemProcessor:
         if last_price != price:
             updates['status.price_changed'] = True
             updates['price'] = price
-            updates['dates.price_changed'] = todays_date
+            updates['dates.price_changed'] = self.todays_date
 
         # check sale status
         if sale_pending:
             updates['status.sale_pending'] = True
-            updates['dates.sale_pending'] = todays_date
+            updates['dates.sale_pending'] = self.todays_date
 
         updates['updated'] = True
 
+        self.save_updated_item(link, updates)
+
+    def save_new_item(self, item):
+        try:
+            # write new item to the db
+            self.db.yachts.insert_one(dict(item))
+        except DuplicateKeyError:
+            print('duplicate item')
+
+    def save_updated_item(self, link, updates):
         # update only changed fields
         self.db.yachts.find_one_and_update(
             {'link': link},  # filter

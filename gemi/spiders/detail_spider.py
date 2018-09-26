@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # packages
 import scrapy
-from gemi.data_engine.database import get_db
-import gemi.data_engine.detail_processor as processor
+from gemi.database import get_db
+import gemi.detail_spider_processors.detail_processor as processor
 
 
 class DetailSpider(scrapy.Spider):

@@ -2,11 +2,10 @@
 # packages
 import scrapy
 # self coded modules
-from gemi.data_engine.basic_processor import ItemProcessor
-from gemi.data_engine.extractor import FieldExtractor
-from gemi.data_engine.util import QueryGenerator
-from gemi.data_engine.database import get_db
-
+from gemi.gemi_spider_processors.basic_processor import ItemProcessor
+from gemi.gemi_spider_processors.extractor import FieldExtractor
+from gemi.gemi_spider_processors.util import QueryGenerator
+from gemi.database import get_db
 
 
 class GemiSpider(scrapy.Spider):
@@ -38,7 +37,7 @@ class GemiSpider(scrapy.Spider):
 
     # Send urls to parse
     def start_requests(self):
-        days = [1, 3, 7, 14, 30, 60, 100]
+        days = [1, 3, 7, 14, 30, 60, '60+']
         for url, day in zip(self.start_urls, days):
             yield scrapy.Request(url=url, meta={'days-on-market': day}, callback=self.parse)
 
@@ -55,21 +54,14 @@ class GemiSpider(scrapy.Spider):
         for page in search_results:
             lengths, links, prices, locations, brokers, sale_pending_fields = self.extractor.extract_fields(page)
 
-            item = dict()
-            item['days_on_market'] = days_on_market
 
             for length, link, price, location, broker, sale_pending in zip(lengths, links, prices,
                                                                            locations, brokers,
                                                                            sale_pending_fields):
+                self.processor.update_and_save_item(length, link, price, location,
+                                           broker, sale_pending, days_on_market)
 
-                new_item = self.processor.update_item(length, link, price, location,
-                                                      broker, sale_pending, item)
-                if not new_item:
-                    # just updated already existing item
-                    continue
-
-                # send the item to the pipeline
-                yield new_item
+                yield True
 
         # follow to the next page
         if self.next_page:
