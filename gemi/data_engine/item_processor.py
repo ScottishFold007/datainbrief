@@ -6,10 +6,11 @@ from gemi.database import get_client_and_db
 
 
 class ItemProcessor:
+    base_url = 'https://www.yachtworld.com'
+    collection_name = 'yachts'
 
     def __init__(self, ):
         self.client, self.db = get_client_and_db()
-        self.collection_name = 'yachts'
         # get links seen
         self.links_seen = self.db[self.collection_name].distinct('link')
         self.todays_date = TimeManager.get_todays_date().isoformat()
@@ -37,17 +38,16 @@ class ItemProcessor:
             self.create_new_item(length, link, price, location, broker, days_on_market)
 
     def create_new_item(self, length, link, price, location, broker, days_on_market):
-        item = dict()
-        item['days_on_market'] = days_on_market
         # clean
         price, length, location, broker = Cleaner.clean_basic_fields(price, length, location, broker)
+        maker, model, year = FieldExtractor.get_maker_model_and_year(link)
 
         # fill in the item info
-        basic_fields = {
+        item = {
             'length': length,
             'location': location,
             'broker': broker,
-            'link': link,
+            'link': self.base_url + link,
             'status': {
                 'active': True,
                 'updated': True,
@@ -60,13 +60,14 @@ class ItemProcessor:
                 'crawled': self.todays_date,
                 'last-updated': self.todays_date
             },
-            'price': price
+            'price': price,
+            'maker': maker,
+            'model': model,
+            'year': year,
+            'days_on_market': days_on_market
         }
-        item.update(basic_fields)
 
-        # add model and year
-        model_and_year = FieldExtractor.get_model_and_year(link)
-        item.update(model_and_year)
+        print(item)
 
         # self.save_new_item(item)
 
