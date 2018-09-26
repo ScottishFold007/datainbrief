@@ -34,14 +34,17 @@ class ItemProcessor:
             'location': location,
             'broker': broker,
             'link': link,
-            'crawled': todays_date,
-            'status':{
+            'status': {
                 'active': True,
                 'updated': True,
                 'removed': False,
                 'sold': False,
                 'sale-pending': False,
                 'price-changed': False
+            },
+            'dates': {
+                'crawled': todays_date,
+                'last-updated': todays_date
             },
             'price': price
         }
@@ -54,54 +57,31 @@ class ItemProcessor:
         return item
 
     def update_already_existing_item(self, link, price, sale_pending):
+
+        updates = dict()
+        todays_date = TimeManager.get_todays_date().isoformat()
         # get the item
         item = self.db.yachts.find_one({"link": link})
         # check the price
-        price_list = ChangeTracker.check_price_change(item, price)
-        # check status
-        sale_status = ChangeTracker.check_status_change(item, sale_pending)
+        last_price = item['price']
+
+        if last_price != price:
+            updates['status.price_changed'] = True
+            updates['price'] = price
+            updates['dates.price_changed'] = todays_date
+
+        # check sale status
+        if sale_pending:
+            updates['status.sale_pending'] = True
+            updates['dates.sale_pending'] = todays_date
+
+        updates['updated'] = True
 
         # update only changed fields
         self.db.yachts.find_one_and_update(
             {'link': link},  # filter
             {
-                '$unset': {'price': ""},  # remove price field
-                '$set': {'price_list': price_list, 'sale_status': sale_status, 'updated': True, 'removed': False},
-                '$inc': {'days_on_market': 1}
+                '$set': updates,
+                '$inc': {'days_on_market': 17}
             }
         )
-
-
-class ChangeTracker:
-    @staticmethod
-    def check_price_change(item, price):
-        today = TimeManager.get_todays_date()
-        try:
-            price_list = item['price_list']
-            last_price = price_list[-1][0]  # get the value of the last price (price,time) tuples
-        except KeyError:
-            # remove the price and return its value
-            last_price = item.pop('price', None)
-            week_ago = TimeManager.get_date_of_x_days_ago(8)
-            # create price list
-            price_list = [(last_price, week_ago.isoformat())]
-
-        if last_price != price:
-            new_price = (price, today.isoformat())
-            price_list.append(new_price)
-
-        return price_list
-
-    @staticmethod
-    def check_status_change(item, sale_pending):
-        today = TimeManager.get_todays_date()
-        week_ago = TimeManager.get_date_of_x_days_ago(8)
-        try:
-            sale_status = item['sale_status']
-        except KeyError:
-            sale_status = [('active', week_ago.isoformat())]
-        if sale_pending:
-            new_status = ('sale_pending', today.isoformat())
-            sale_status.append(new_status)
-
-        return sale_status

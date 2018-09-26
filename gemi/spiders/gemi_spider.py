@@ -41,7 +41,7 @@ class GemiSpider(scrapy.Spider):
         self.db.yachts.update_many(
             {},  # select unsold items
             {
-                '$set': {'updated': False}
+                '$set': {'status.updated': False}
             }
         )
 
