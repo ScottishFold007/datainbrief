@@ -6,20 +6,39 @@ from pymongo.errors import DuplicateKeyError
 
 
 class ItemProcessor:
+    collection_name = 'yachts'
     def __init__(self):
         self.db = get_db()
         # get links seen
-        self.links_seen = self.db.yachts.distinct('link')
+        self.links_seen = self.db[self.collection_name].distinct('link')
         self.todays_date = TimeManager.get_todays_date().isoformat()
+        self.metadata = self.get_metadata()
+        if not self.metadata['set_initial_status_today']:
+            self.set_initial_status()
+
+    def get_metadata(self):
+        return self.db[self.collection_name].find_one({'metadata': {"$exists": True}})
+
+    def set_metadata(self, updates):
+        self.db[self.collection_name].find_one_and_update(
+            {
+                'metadata': {"$exists": True}
+            },
+            {
+                '$set': updates
+            }
+        )
+
 
     def set_initial_status(self):
         # set all as not updated first
-        self.db.yachts.update_many(
+        self.db[self.collection_name].update_many(
             {},  # select unsold items
             {
                 '$set': {'status.updated': False}
             }
         )
+        self.set_metadata({'set_initial_status_today':True})
 
     def update_and_save_item(self, length, link, price, location, broker, sale_pending, days_on_market):
         # track earlier items
@@ -68,7 +87,7 @@ class ItemProcessor:
 
         updates = dict()
         # get the item
-        item = self.db.yachts.find_one({"link": link})
+        item = self.db[self.collection_name].find_one({"link": link})
         # check the price
         last_price = item['price']
 
@@ -90,13 +109,13 @@ class ItemProcessor:
     def save_new_item(self, item):
         try:
             # write new item to the db
-            self.db.yachts.insert_one(dict(item))
+            self.db[self.collection_name].insert_one(dict(item))
         except DuplicateKeyError:
             print('duplicate item')
 
     def save_updated_item(self, link, updates):
         # update only changed fields
-        self.db.yachts.find_one_and_update(
+        self.db[self.collection_name].find_one_and_update(
             {'link': link},  # filter
             {
                 '$set': updates,
