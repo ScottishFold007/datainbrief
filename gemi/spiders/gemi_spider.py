@@ -13,15 +13,6 @@ class GemiSpider(scrapy.Spider):
     name = 'gemi'
     allowed_domains = ['yachtworld.com']
 
-    # Configure item pipelines
-    # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
-    custom_settings = {
-        'ITEM_PIPELINES': {
-            # 'gemi.pipelines.DuplicatesPipeline': 200,
-            'gemi.pipelines.NewItemPipeline': 300  # pipeline with smaller number executed first
-        }
-    }
-
     # entry point
     def __init__(self, next_page=True, *args, **kwargs):
         super(GemiSpider, self).__init__(*args, **kwargs)
