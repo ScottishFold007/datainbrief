@@ -73,7 +73,7 @@ class ItemProcessor:
 
         print('new item: ', item)
 
-        # self.save_new_item(item)
+        self.save_new_item(item)
 
     def is_already_updated(self, item):
         last_updated = TimeManager.str_to_date(item['dates']['last-updated'])
@@ -99,7 +99,7 @@ class ItemProcessor:
 
         if last_price != price:
             updates['status.price_changed'] = True
-            updates['price'] = Cleaner.remove_empty_chars_and_new_lines(list(price))
+            updates['price'] = Cleaner.remove_empty_chars_and_new_lines([price])
             updates['dates.price_changed'] = self.todays_date
 
         # check sale status
@@ -113,7 +113,7 @@ class ItemProcessor:
 
         print('updated: ', updates)
 
-        # self.save_updated_item(link, updates)
+        self.save_updated_item(link, updates)
 
     def save_new_item(self, item):
         try:
