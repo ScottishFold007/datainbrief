@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 from urllib.parse import urlencode
 from collections import OrderedDict
 
@@ -6,11 +6,15 @@ from collections import OrderedDict
 class TimeManager:
     @staticmethod
     def get_todays_date():
-        return datetime.datetime.now().date()
+        return datetime.now().date()
 
     @staticmethod
     def get_date_of_x_days_ago(days_ago):
-        return datetime.datetime.now().date() - datetime.timedelta(days=days_ago)
+        return datetime.now().date() - datetime.timedelta(days=days_ago)
+
+    @staticmethod
+    def str_to_date(str):
+        return datetime.strptime(str, '%Y-%m-%d').date()
 
 
 class Cleaner:

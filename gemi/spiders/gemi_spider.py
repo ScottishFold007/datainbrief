@@ -34,13 +34,13 @@ class GemiSpider(scrapy.Spider):
         days_on_market = response.meta['days-on-market']
 
         for page in search_results_table:
-            lengths, links, prices, locations, brokers, sale_pending_fields = self.extractor.extract_fields(page)
+            lengths, sub_links, prices, locations, brokers, sale_pending_fields = self.extractor.extract_fields(page)
 
-            for length, link, price, location, broker, sale_pending in zip(lengths, links, prices,
+            for length, sub_link, price, location, broker, sale_pending in zip(lengths, sub_links, prices,
                                                                            locations, brokers,
                                                                            sale_pending_fields):
 
-                item_data = [length, link, price, location, broker, sale_pending, days_on_market]
+                item_data = [length, sub_link, price, location, broker, sale_pending, days_on_market]
                 self.processor.update_and_save_item_data(item_data)
 
                 yield None

@@ -28,26 +28,27 @@ class ItemProcessor:
         )
 
     def update_and_save_item_data(self, item_data):
-        length, link, price, location, broker, sale_pending, days_on_market = item_data
+        length, sub_link, price, location, broker, sale_pending, days_on_market = item_data
+        link = self.base_url + sub_link
         # track earlier items
-        if link in self.links_seen:
+        if link in self.links_seen:  # seen before
             self.update_already_existing_item(link, price, sale_pending)
         else:
             # if seen first time
             self.links_seen.append(link)
-            self.create_new_item(length, link, price, location, broker, days_on_market)
+            self.create_new_item(length, sub_link, link, price, location, broker, days_on_market)
 
-    def create_new_item(self, length, link, price, location, broker, days_on_market):
+    def create_new_item(self, length, sub_link, link, price, location, broker, days_on_market):
         # clean
         price, length, location, broker = Cleaner.clean_basic_fields(price, length, location, broker)
-        maker, model, year = FieldExtractor.get_maker_model_and_year(link)
+        maker, model, year = FieldExtractor.get_maker_model_and_year(sub_link)
 
         # fill in the item info
         item = {
             'length': length,
             'location': location,
             'broker': broker,
-            'link': self.base_url + link,
+            'link': link,
             'status': {
                 'active': True,
                 'updated': True,
@@ -67,8 +68,6 @@ class ItemProcessor:
             'days_on_market': days_on_market
         }
 
-        print(item)
-
         # self.save_new_item(item)
 
     def update_already_existing_item(self, link, price, sale_pending):
@@ -76,6 +75,12 @@ class ItemProcessor:
         updates = dict()
         # get the item
         item = self.db[self.collection_name].find_one({"link": link})
+
+        # check last update
+        last_updated = TimeManager.str_to_date(item['dates']['last-updated'])
+        if last_updated == self.todays_date():  # already updated today
+            return True
+
         # check the price
         last_price = item['price']
 
