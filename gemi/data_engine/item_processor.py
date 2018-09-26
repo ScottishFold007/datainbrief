@@ -1,7 +1,7 @@
 # db
 from gemi.database import get_db
-from gemi.gemi_spider_processors.data_extractor import FieldExtractor
-from gemi.gemi_spider_processors.util import TimeManager, Cleaner
+from gemi.data_engine.field_extractor import FieldExtractor
+from gemi.data_engine.util import TimeManager, Cleaner
 from pymongo.errors import DuplicateKeyError
 
 

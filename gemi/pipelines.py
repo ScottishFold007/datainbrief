@@ -8,7 +8,7 @@ from pymongo.errors import DuplicateKeyError
 from scrapy.exceptions import DropItem
 
 from gemi.database import get_db_client, get_db
-from gemi.gemi_spider_processors.util import TimeManager
+from gemi.data_engine.util import TimeManager
 
 
 # only checks duplicates in the current job

@@ -2,7 +2,7 @@
 # packages
 import scrapy
 from gemi.database import get_db
-import gemi.detail_spider_processors.detail_processor as processor
+import gemi.data_engine.detail_processor as processor
 
 
 class DetailSpider(scrapy.Spider):
