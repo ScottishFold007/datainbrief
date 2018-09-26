@@ -12,22 +12,6 @@ class ItemProcessor:
         # get links seen
         self.links_seen = self.db[self.collection_name].distinct('link')
         self.todays_date = TimeManager.get_todays_date().isoformat()
-        self.metadata = self.get_metadata()
-        if not self.metadata['set_initial_status_today']:
-            self.set_initial_status()
-
-    def get_metadata(self):
-        return self.db[self.collection_name].find_one({'metadata': {"$exists": True}})
-
-    def set_metadata(self, updates):
-        self.db[self.collection_name].find_one_and_update(
-            {
-                'metadata': {"$exists": True}
-            },
-            {
-                '$set': updates
-            }
-        )
 
 
     def set_initial_status(self):
