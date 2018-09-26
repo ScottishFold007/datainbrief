@@ -1,14 +1,14 @@
 # db
-from gemi.database import get_db
 from gemi.data_engine.field_extractor import FieldExtractor
 from gemi.data_engine.util import TimeManager, Cleaner
 from pymongo.errors import DuplicateKeyError
 
 
 class ItemProcessor:
-    collection_name = 'yachts'
-    def __init__(self):
-        self.db = get_db()
+
+    def __init__(self, db):
+        self.db = db
+        self.collection_name = 'yachts'
         # get links seen
         self.links_seen = self.db[self.collection_name].distinct('link')
         self.todays_date = TimeManager.get_todays_date().isoformat()
@@ -33,14 +33,15 @@ class ItemProcessor:
     def set_initial_status(self):
         # set all as not updated first
         self.db[self.collection_name].update_many(
-            {},  # select unsold items
+            {'status.updated'},  # select unsold items
             {
                 '$set': {'status.updated': False}
             }
         )
         self.set_metadata({'set_initial_status_today':True})
 
-    def update_and_save_item(self, length, link, price, location, broker, sale_pending, days_on_market):
+    def update_and_save_item_data(self, item_data):
+        length, link, price, location, broker, sale_pending, days_on_market = item_data
         # track earlier items
         if link in self.links_seen:
             self.update_already_existing_item(link, price, sale_pending)
@@ -122,3 +123,13 @@ class ItemProcessor:
                 '$inc': {'days_on_market': 17}
             }
         )
+
+    def record_removed_items(self):
+        # get untouched items
+        not_updated_items = self.db.yachts.find({'status.updated': False})
+        # update info for every item
+        for item in not_updated_items:
+            updates = dict()
+            updates['status.removed'] = True
+            updates['dates.removed'] = self.todays_date
+

@@ -10,6 +10,11 @@ from gemi.data_engine.util import QueryGenerator
 class GemiSpider(scrapy.Spider):
     name = 'gemi'
     allowed_domains = ['yachtworld.com']
+    custom_settings = {
+        'ITEM_PIPELINES': {
+            'gemi.pipelines.ItemPipeline': 200,  # the number in range 0-1000
+        }
+    }
 
     # entry point
     def __init__(self, next_page=True, *args, **kwargs):
@@ -20,7 +25,6 @@ class GemiSpider(scrapy.Spider):
         self.start_urls = QueryGenerator.generate_urls_for_search_queries()
         self.extractor = FieldExtractor()
         self.processor = ItemProcessor()
-
 
     # Send urls to parse
     def start_requests(self):
@@ -40,10 +44,11 @@ class GemiSpider(scrapy.Spider):
             for length, link, price, location, broker, sale_pending in zip(lengths, links, prices,
                                                                            locations, brokers,
                                                                            sale_pending_fields):
-                self.processor.update_and_save_item(length, link, price, location,
-                                                    broker, sale_pending, days_on_market)
+                self.processor.update_and_save_item
 
-                yield True
+                item_data = [length, link, price, location, broker, sale_pending, days_on_market]
+
+                yield item_data
 
         # follow to the next page
         if self.next_page:

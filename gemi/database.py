@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 
 
-def get_db_client():
+def get_client():
     client = MongoClient(host='mongodb://<dbuser>:<dbpassword>@ds237072.mlab.com:37072/gemi',
                          port=47450,
                          username='roxy',
@@ -12,10 +12,10 @@ def get_db_client():
     return client
 
 
-def get_db():
-    client = get_db_client()
+def get_client_and_db():
+    client = get_client()
     database = client['gemi']
-    return database
+    return client, database
 
 
 if __name__ == "__main__":
