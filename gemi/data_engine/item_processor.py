@@ -2,27 +2,29 @@
 from gemi.data_engine.field_extractor import FieldExtractor
 from gemi.data_engine.util import TimeManager, Cleaner
 from pymongo.errors import DuplicateKeyError
+from gemi.database import get_client_and_db
 
 
 class ItemProcessor:
 
-    def __init__(self, db):
-        self.db = db
+    def __init__(self, ):
+        self.client, self.db = get_client_and_db()
         self.collection_name = 'yachts'
         # get links seen
         self.links_seen = self.db[self.collection_name].distinct('link')
         self.todays_date = TimeManager.get_todays_date().isoformat()
 
+    def close_spider(self, spider):
+        self.client.close()
 
     def set_initial_status(self):
         # set all as not updated first
         self.db[self.collection_name].update_many(
-            {'status.updated'},  # select unsold items
+            {"dates.last-updated": {"$lt": self.todays_date}},  # select unsold items
             {
                 '$set': {'status.updated': False}
             }
         )
-        self.set_metadata({'set_initial_status_today':True})
 
     def update_and_save_item_data(self, item_data):
         length, link, price, location, broker, sale_pending, days_on_market = item_data
@@ -66,7 +68,7 @@ class ItemProcessor:
         model_and_year = FieldExtractor.get_model_and_year(link)
         item.update(model_and_year)
 
-        self.save_new_item(item)
+        # self.save_new_item(item)
 
     def update_already_existing_item(self, link, price, sale_pending):
 
@@ -87,9 +89,10 @@ class ItemProcessor:
             updates['dates.sale_pending'] = self.todays_date
 
         updates['updated'] = True
+        updates['status.removed'] = False
         updates['dates.last-updated'] = self.todays_date
 
-        self.save_updated_item(link, updates)
+        # self.save_updated_item(link, updates)
 
     def save_new_item(self, item):
         try:
@@ -109,11 +112,11 @@ class ItemProcessor:
         )
 
     def record_removed_items(self):
-        # get untouched items
-        not_updated_items = self.db.yachts.find({'status.updated': False})
-        # update info for every item
-        for item in not_updated_items:
-            updates = dict()
-            updates['status.removed'] = True
-            updates['dates.removed'] = self.todays_date
-
+        updates = dict()
+        updates['status.removed'] = True
+        updates['dates.removed'] = self.todays_date
+        # get untouched items and update
+        self.db.yachts.update_many(
+            {'status.updated': False},
+            {'$set': updates}
+        )
