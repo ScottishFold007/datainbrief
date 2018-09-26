@@ -32,6 +32,20 @@ class Cleaner:
                 prices.pop(i)
         return prices
 
+    @staticmethod
+    def clean_price(price):
+        price = " ".join(price.split())
+        messy_chars = {'US$', ',', '(', ')', '⁄', ' ', '\n', '\t', '[', ']'}
+
+        for ch in messy_chars:
+            if ch in price:
+                price = price.replace(ch, '')
+
+        if price.isdigit():
+            price = int(price)
+
+        return price
+
 
 class QueryGenerator:
     @staticmethod

@@ -39,8 +39,7 @@ class ItemProcessor:
             self.create_new_item(length, sub_link, link, price, location, broker, days_on_market)
 
     def create_new_item(self, length, sub_link, link, price, location, broker, days_on_market):
-        # clean
-        price, length, location, broker = Cleaner.remove_empty_chars_and_new_lines([price, length, location, broker])
+        length, location, broker = Cleaner.remove_empty_chars_and_new_lines([length, location, broker])
         maker, model, year = FieldExtractor.get_maker_model_and_year(sub_link)
         city, state, country = FieldExtractor.extract_city_state_and_country_from_location(location)
         # fill in the item info
@@ -64,7 +63,7 @@ class ItemProcessor:
                 'crawled': self.todays_date,
                 'last-updated': self.todays_date
             },
-            'price': price,
+            'price': Cleaner.clean_price(price),
             'maker': maker,
             'model': model,
             'year': year,
@@ -99,7 +98,7 @@ class ItemProcessor:
 
         if last_price != price:
             updates['status.price_changed'] = True
-            updates['price'] = Cleaner.remove_empty_chars_and_new_lines([price])
+            updates['price'] = Cleaner.clean_price(price)
             updates['dates.price_changed'] = self.todays_date
 
         # check sale status
@@ -128,7 +127,7 @@ class ItemProcessor:
             {'link': link},  # filter
             {
                 '$set': updates,
-                '$inc': {'days_on_market': 17}
+                '$inc': {'days_on_market': 1}
             }
         )
 
