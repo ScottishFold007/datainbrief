@@ -1,50 +1,44 @@
 # -*- coding: utf-8 -*-
 # packages
 import scrapy
-import gemi.data_engine.detail_processor as processor
-from gemi.database import get_client_and_db
+from gemi.pipelines import DetailPipeline
 
 
 class DetailSpider(scrapy.Spider):
     name = 'detail'
     allowed_domains = ['yachtworld.com']
-    client, db = get_client_and_db()
     base_url = 'https://www.yachtworld.com'
-
     custom_settings = {
-        'ITEM_PIPELINES': {
-            'gemi.pipelines.DetailPipeline': 300  # pipeline with smaller number executed first
+        'ITEM_PIPELINES' : {
+           # 'gemi.pipelines.DetailPipeline': 200, # the number in range 0-1000
         }
     }
-
     # entry point
     def __init__(self, *args, **kwargs):
         super(DetailSpider, self).__init__(*args, **kwargs)
-        self.start_urls = self.get_detail_links()
-
-    def get_detail_links(self):
-        links = self.db.yachts.distinct('link')
-        urls = list()
-        for link in links:
-            if 'http' in link:  # already ok
-                continue
-            url = self.base_url + link
-            urls.append(url)
-        return urls
+        self.start_urls = DetailPipeline.get_links()
 
     # Send urls to parse
     def start_requests(self):
         for url in self.start_urls:
-            yield scrapy.Request(url=url, callback=self.parse)
+            yield scrapy.Request(url=url, meta={'url': url}, callback=self.parse)
 
     def parse(self, response):
-        detail_selector = 'div.boatdetails::text'
-        detail = response.css(detail_selector).extract()
-        hours = processor.get_hours(detail)
-        item = dict()
-        item.update({'hours': hours})
-        if hours == 'hour in description':
-            detail = " ".join(detail.split())
-            item.update({'detail': detail})
+        detail_selector = 'div.boatdetails  div:first-child::text'
+        fullspec_selector = 'div.fullspecs div:first-child::text'
+        # detail = response.css(detail_selector).extract()
+        fullspecs = response.css(fullspec_selector).extract()
+        hour_in_various_languages = {'hour', 'time', 'stunde', 'ora', 'heure', 'uur', 'tunnin', 'timme', 'saat',
+                                     'hora'}
+        hours = list()
+        for line in fullspecs:
+            line = " ".join(line.split()).lower()
+            if any(word in line for word in hour_in_various_languages):
+                hours.append(line)
+
+        # link = response.meta['url']
+
+        item = {'hours':hours}
+
         # send the item info to the pipeline
         yield item

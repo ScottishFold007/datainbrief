@@ -66,6 +66,7 @@ class ItemProcessor:
             'price': Cleaner.clean_price(price),
             'maker': maker,
             'model': model,
+            'maker model': maker + model,
             'year': year,
             'days_on_market': days_on_market
         }
