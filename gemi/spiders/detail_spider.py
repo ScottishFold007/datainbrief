@@ -8,11 +8,7 @@ class DetailSpider(scrapy.Spider):
     name = 'detail'
     allowed_domains = ['yachtworld.com']
     base_url = 'https://www.yachtworld.com'
-    custom_settings = {
-        'ITEM_PIPELINES' : {
-           # 'gemi.pipelines.DetailPipeline': 200, # the number in range 0-1000
-        }
-    }
+
     # entry point
     def __init__(self, *args, **kwargs):
         super(DetailSpider, self).__init__(*args, **kwargs)
@@ -26,6 +22,7 @@ class DetailSpider(scrapy.Spider):
     def parse(self, response):
         full_spec_selector = 'div.full_specs div:first-child::text'
         full_specs = response.css(full_spec_selector).extract()
+
         hour_in_various_languages = {'hour', 'time', 'stunde', 'ora', 'heure', 'uur', 'tunnin', 'timme', 'saat',
                                      'hora'}
         hours = list()
