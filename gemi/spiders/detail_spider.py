@@ -24,9 +24,7 @@ class DetailSpider(scrapy.Spider):
             yield scrapy.Request(url=url, meta={'url': url}, callback=self.parse)
 
     def parse(self, response):
-        detail_selector = 'div.boatdetails  div:first-child::text'
         fullspec_selector = 'div.fullspecs div:first-child::text'
-        # detail = response.css(detail_selector).extract()
         fullspecs = response.css(fullspec_selector).extract()
         hour_in_various_languages = {'hour', 'time', 'stunde', 'ora', 'heure', 'uur', 'tunnin', 'timme', 'saat',
                                      'hora'}
