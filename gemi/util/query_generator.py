@@ -1,50 +1,5 @@
-from datetime import datetime
 from urllib.parse import urlencode
 from collections import OrderedDict
-
-
-class TimeManager:
-    @staticmethod
-    def get_todays_date():
-        return datetime.now().date()
-
-    @staticmethod
-    def get_date_of_x_days_ago(days_ago):
-        return datetime.now().date() - datetime.timedelta(days=days_ago)
-
-    @staticmethod
-    def str_to_date(str):
-        return datetime.strptime(str, '%Y-%m-%d').date()
-
-
-class Cleaner:
-    @staticmethod
-    def remove_empty_chars_and_new_lines(fields):
-        # clean the fields
-        cleaned_fields = list(map(lambda field: " ".join(field.split()), fields))
-        return cleaned_fields
-
-    @staticmethod
-    def remove_empty_prices(prices):
-        for i, price in enumerate(prices):
-            clean_price = price.replace('\n', '').strip()
-            if clean_price == '':
-                prices.pop(i)
-        return prices
-
-    @staticmethod
-    def clean_price(price):
-        price = " ".join(price.split())
-        messy_chars = {'US$', ',', '(', ')', '⁄', ' ', '\n', '\t', '[', ']'}
-
-        for ch in messy_chars:
-            if ch in price:
-                price = price.replace(ch, '')
-
-        if price.isdigit():
-            price = int(price)
-
-        return price
 
 
 class QueryGenerator:

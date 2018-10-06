@@ -4,7 +4,7 @@ import scrapy
 # self coded modules
 from gemi.data_engine.item_processor import ItemProcessor
 from gemi.data_engine.field_extractor import FieldExtractor
-from gemi.data_engine.util import QueryGenerator
+from gemi.util.query_generator import QueryGenerator
 
 
 class GemiSpider(scrapy.Spider):

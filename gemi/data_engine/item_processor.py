@@ -1,8 +1,10 @@
-# db
+
 from gemi.data_engine.field_extractor import FieldExtractor
-from gemi.data_engine.util import TimeManager, Cleaner
-from pymongo.errors import DuplicateKeyError
+from gemi.util.time_manager import TimeManager
+from gemi.util.cleaner import Cleaner
 from gemi.database import get_client_and_db
+
+from pymongo.errors import DuplicateKeyError
 
 
 class ItemProcessor:

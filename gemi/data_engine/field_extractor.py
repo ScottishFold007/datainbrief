@@ -1,4 +1,4 @@
-from gemi.data_engine.util import Cleaner
+from gemi.util.cleaner import Cleaner
 
 
 class FieldExtractor:
