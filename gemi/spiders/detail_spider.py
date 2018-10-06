@@ -24,12 +24,12 @@ class DetailSpider(scrapy.Spider):
             yield scrapy.Request(url=url, meta={'url': url}, callback=self.parse)
 
     def parse(self, response):
-        fullspec_selector = 'div.fullspecs div:first-child::text'
-        fullspecs = response.css(fullspec_selector).extract()
+        full_spec_selector = 'div.full_specs div:first-child::text'
+        full_specs = response.css(full_spec_selector).extract()
         hour_in_various_languages = {'hour', 'time', 'stunde', 'ora', 'heure', 'uur', 'tunnin', 'timme', 'saat',
                                      'hora'}
         hours = list()
-        for line in fullspecs:
+        for line in full_specs:
             line = " ".join(line.split()).lower()
             if any(word in line for word in hour_in_various_languages):
                 hours.append(line)
