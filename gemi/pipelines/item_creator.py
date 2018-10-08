@@ -9,7 +9,6 @@ from gemi.util.time_manager import date_now
 from pymongo.errors import DuplicateKeyError
 
 
-
 class NewItemCreator(object):
 
     @staticmethod

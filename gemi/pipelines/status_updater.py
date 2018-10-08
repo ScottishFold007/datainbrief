@@ -17,9 +17,11 @@ class StatusUpdater(object):
 
     @staticmethod
     def record_removed_items():
+        # prepare updates
         updates = dict()
         updates['status.removed'] = True
         updates['dates.removed'] = date_now
+
         # get untouched items and update
         db.yachts.update_many(
             {'status.updated': False},

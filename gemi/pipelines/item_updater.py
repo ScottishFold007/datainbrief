@@ -1,7 +1,6 @@
-from gemi.util.time_manager import TimeManager
 from gemi.util.cleaner import Cleaner
 from gemi.database import db
-from gemi.util.time_manager import date_now
+from gemi.util.time_manager import date_now, str_to_date
 
 collection_name = 'yachts'
 
@@ -9,7 +8,7 @@ collection_name = 'yachts'
 class ItemUpdater(object):
     @staticmethod
     def is_already_updated(item):
-        last_updated = TimeManager.str_to_date(item['dates']['last-updated'])
+        last_updated = str_to_date(item['dates']['last-updated'])
         if last_updated == date_now:  # already updated today
             print(last_updated.isoformat(), 'already updated today')
             return True
@@ -23,7 +22,7 @@ class ItemUpdater(object):
             return True
 
         # check last update
-        if self.is_already_updated(item, date_now):
+        if self.is_already_updated(item):
             return True
 
         # check the price
@@ -54,6 +53,6 @@ class ItemUpdater(object):
             {'link': link},  # filter
             {
                 '$set': updates,
-                '$inc': {'days_on_market': 1}
+                '$inc': {'days_on_market': 12}
             }
         )
