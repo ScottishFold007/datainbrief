@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # packages
 import scrapy
-from gemi.database import get_client_and_db
+from gemi.database import db
 
 
 class DetailSpider(scrapy.Spider):
@@ -13,7 +13,6 @@ class DetailSpider(scrapy.Spider):
     # entry point
     def __init__(self, *args, **kwargs):
         super(DetailSpider, self).__init__(*args, **kwargs)
-        client, db = get_client_and_db()
         self.start_urls = db.yachts.distinct('link')
 
     # Send urls to parse
@@ -22,20 +21,29 @@ class DetailSpider(scrapy.Spider):
             yield scrapy.Request(url=url, meta={'url': url}, callback=self.parse)
 
     def parse(self, response):
-        full_spec_selector = 'div.full_specs div:first-child::text'
+        full_spec_selector = 'div.fullspecs div:first-child::text'
         full_specs = response.css(full_spec_selector).extract()
-
-        # hour_in_various_languages = {'hour', 'time', 'stunde', 'ora', 'heure', 'uur', 'tunnin', 'timme', 'saat',   'hora'}
+        item_link = response.meta['url']
 
         specs = dict()
-        self.logger.info(full_specs)
-
         for line in full_specs:
             line = " ".join(line.split()).lower()
             line = line.split(':')
-            self.logger.info(line)
-            spec_key = line[0]
-            spec_value = line[1]
-            specs[spec_key] = spec_value
+            if len(line) == 2:
+                spec_key = " ".join(line[0].split())
+                spec_value = " ".join(line[1].split())
+                specs[spec_key] = spec_value
+            else:
+                continue
 
-        yield specs
+        db.update(
+            {'link': item_link},
+            {
+                '$set':
+                    {
+                        'details': specs
+                    }
+            }
+        )
+
+        yield None

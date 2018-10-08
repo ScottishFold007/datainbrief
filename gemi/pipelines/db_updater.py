@@ -1,7 +1,7 @@
 # project packages
 from gemi.database import db
-from gemi.data_engine.item_creator import NewItemCreator
-from gemi.data_engine.item_updater import ItemUpdater
+from gemi.pipelines.item_creator import NewItemCreator
+from gemi.pipelines.item_updater import ItemUpdater
 from gemi.util.time_manager import TimeManager
 
 collection_name = 'yachts'

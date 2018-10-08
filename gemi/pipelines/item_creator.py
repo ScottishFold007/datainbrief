@@ -1,4 +1,4 @@
-from gemi.data_engine.field_extractor import FieldExtractor
+from gemi.pipelines.field_extractor import FieldExtractor
 from gemi.util.cleaner import Cleaner
 from gemi.util.time_manager import TimeManager
 from gemi.database import db
