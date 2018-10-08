@@ -13,7 +13,7 @@ class DetailSpider(scrapy.Spider):
     # entry point
     def __init__(self, *args, **kwargs):
         super(DetailSpider, self).__init__(*args, **kwargs)
-        self.start_urls = db.yachts.distinct('link')
+        self.start_urls =  db.yachts.find({'details': {'$exists': False}})
 
     # Send urls to parse
     def start_requests(self):
