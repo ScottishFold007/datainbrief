@@ -1,11 +1,9 @@
 from datetime import datetime
 
+date_now = datetime.now().date().isoformat()
+
 
 class TimeManager:
-    @staticmethod
-    def get_todays_date():
-        return datetime.now().date()
-
     @staticmethod
     def get_date_of_x_days_ago(days_ago):
         return datetime.now().date() - datetime.timedelta(days=days_ago)

@@ -1,14 +1,19 @@
+# helpers
 from gemi.pipelines.field_extractor import FieldExtractor
 from gemi.util.cleaner import Cleaner
-from gemi.util.time_manager import TimeManager
+# db
 from gemi.database import db
+# date
+from gemi.util.time_manager import date_now
+# external packages
 from pymongo.errors import DuplicateKeyError
+
 
 
 class NewItemCreator(object):
 
     @staticmethod
-    def create_new_item(length, sub_link, link, price, location, broker, days_on_market, date):
+    def create_new_item(length, sub_link, link, price, location, broker, days_on_market):
         length, location, broker = Cleaner.remove_empty_chars_and_new_lines([length, location, broker])
         maker, model, year = FieldExtractor.get_maker_model_and_year(sub_link)
         city, state, country = FieldExtractor.extract_city_state_and_country_from_location(location)
@@ -30,8 +35,8 @@ class NewItemCreator(object):
                 'price-changed': False
             },
             'dates': {
-                'crawled': date,
-                'last-updated': date
+                'crawled': date_now,
+                'last-updated': date_now
             },
             'price': Cleaner.clean_price(price),
             'maker': maker,

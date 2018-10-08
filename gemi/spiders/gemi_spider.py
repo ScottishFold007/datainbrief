@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
 # packages
 import scrapy
-# self coded modules
-from gemi.pipelines.db_updater import DatabaseUpdater
-from gemi.pipelines.field_extractor import FieldExtractor
+# helpers
 from gemi.util.query_generator import QueryGenerator
+# item pipelines
+from gemi.pipelines.field_extractor import FieldExtractor
+from gemi.pipelines.item_creator import NewItemCreator
+from gemi.pipelines.item_updater import ItemUpdater
+from gemi.pipelines.status_updater import StatusUpdater
+# db
+from gemi.database import db
 
 
 class GemiSpider(scrapy.Spider):
@@ -12,6 +17,7 @@ class GemiSpider(scrapy.Spider):
     domain = 'yachtworld.com'
     base_url = 'https://www.yachtworld.com'
     allowed_domains = [domain]
+    collection_name = 'yachts'
 
     # entry point
     def __init__(self, next_page=True, *args, **kwargs):
@@ -20,7 +26,8 @@ class GemiSpider(scrapy.Spider):
         # get urls
         self.start_urls = QueryGenerator.generate_urls_for_search_queries()
         self.extractor = FieldExtractor()
-        self.updater = DatabaseUpdater()
+        self.links_seen = db[self.collection_name].distinct('link')
+        StatusUpdater.set_initial_status()
 
     # Send urls to parse
     def start_requests(self):
@@ -38,11 +45,20 @@ class GemiSpider(scrapy.Spider):
             lengths, sub_links, prices, locations, brokers, sale_pending_fields = self.extractor.extract_fields(page)
 
             for length, sub_link, price, location, broker, sale_pending in zip(lengths, sub_links, prices,
-                                                                           locations, brokers,
-                                                                           sale_pending_fields):
+                                                                               locations, brokers,
+                                                                               sale_pending_fields):
 
-                item_data = [length, sub_link, price, location, broker, sale_pending, days_on_market]
-                self.updater.update_item_data(item_data)
+                link = self.base_url + sub_link
+                # seen before
+                if link in self.links_seen:
+                    updates = ItemUpdater.update_already_existing_item(link, price, sale_pending)
+                    ItemUpdater.save_updated_item(link, updates)
+                # seen first time
+                else:
+                    self.links_seen.append(link)
+                    item = NewItemCreator.create_new_item(length, sub_link, link, price, location, broker,
+                                                          days_on_market)
+                    NewItemCreator.save_new_item(item)
 
                 yield None
 

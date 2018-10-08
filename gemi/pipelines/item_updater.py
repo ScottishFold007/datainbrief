@@ -1,19 +1,20 @@
 from gemi.util.time_manager import TimeManager
 from gemi.util.cleaner import Cleaner
 from gemi.database import db
+from gemi.util.time_manager import date_now
 
 collection_name = 'yachts'
 
 
 class ItemUpdater(object):
     @staticmethod
-    def is_already_updated(item, todays_date):
+    def is_already_updated(item):
         last_updated = TimeManager.str_to_date(item['dates']['last-updated'])
-        if last_updated == todays_date:  # already updated today
+        if last_updated == date_now:  # already updated today
             print(last_updated.isoformat(), 'already updated today')
             return True
 
-    def update_already_existing_item(self, item, price, sale_pending, todays_date):
+    def update_already_existing_item(self, link, price, sale_pending):
         updates = dict()
 
         item = db[collection_name].find_one({"link": link})
@@ -22,7 +23,7 @@ class ItemUpdater(object):
             return True
 
         # check last update
-        if self.is_already_updated(item, todays_date):
+        if self.is_already_updated(item, date_now):
             return True
 
         # check the price
@@ -31,16 +32,16 @@ class ItemUpdater(object):
         if last_price != price:
             updates['status.price_changed'] = True
             updates['price'] = Cleaner.clean_price(price)
-            updates['dates.price_changed'] = todays_date
+            updates['dates.price_changed'] = date_now
 
         # check sale status
         if sale_pending:
             updates['status.sale_pending'] = True
-            updates['dates.sale_pending'] = todays_date
+            updates['dates.sale_pending'] = date_now
 
         updates['updated'] = True
         updates['status.removed'] = False
-        updates['dates.last-updated'] = todays_date
+        updates['dates.last-updated'] = date_now
 
         print('updated: ', updates)
 
