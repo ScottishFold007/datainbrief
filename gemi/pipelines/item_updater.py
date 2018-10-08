@@ -54,6 +54,6 @@ class ItemUpdater(object):
             {'link': link},  # filter
             {
                 '$set': updates,
-                '$inc': {'days_on_market': 12}
+                '$inc': {'days_on_market': 1}
             }
         )
