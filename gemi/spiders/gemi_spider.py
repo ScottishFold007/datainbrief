@@ -2,7 +2,7 @@
 # packages
 import scrapy
 # self coded modules
-from gemi.data_engine.item_processor import DatabaseUpdater
+from gemi.data_engine.db_updater import DatabaseUpdater
 from gemi.data_engine.field_extractor import FieldExtractor
 from gemi.util.query_generator import QueryGenerator
 
