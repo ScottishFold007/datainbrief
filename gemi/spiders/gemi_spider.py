@@ -9,8 +9,9 @@ from gemi.util.query_generator import QueryGenerator
 
 class GemiSpider(scrapy.Spider):
     name = 'gemi'
-    allowed_domains = ['yachtworld.com']
+    domain = 'yachtworld.com'
     base_url = 'https://www.yachtworld.com'
+    allowed_domains = [domain]
 
     # entry point
     def __init__(self, next_page=True, *args, **kwargs):

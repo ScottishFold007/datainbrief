@@ -6,8 +6,9 @@ from gemi.database import get_client_and_db
 
 class DetailSpider(scrapy.Spider):
     name = 'detail'
-    allowed_domains = ['yachtworld.com']
+    domain = 'yachtworld.com'
     base_url = 'https://www.yachtworld.com'
+    allowed_domains = [domain]
 
     # entry point
     def __init__(self, *args, **kwargs):
