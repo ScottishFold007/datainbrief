@@ -13,7 +13,8 @@ class ItemUpdater(object):
             print(last_updated.isoformat(), 'already updated today')
             return True
 
-    def update_already_existing_item(self, link, price, sale_pending):
+    @classmethod
+    def update_already_existing_item(cls, link, price, sale_pending):
         updates = dict()
 
         item = db[collection_name].find_one({"link": link})
@@ -22,7 +23,7 @@ class ItemUpdater(object):
             return True
 
         # check last update
-        if self.is_already_updated(item):
+        if cls.is_already_updated(item):
             return True
 
         # check the price

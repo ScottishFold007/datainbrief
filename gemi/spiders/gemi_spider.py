@@ -42,13 +42,12 @@ class GemiSpider(scrapy.Spider):
         days_on_market = response.meta['days-on-market']
 
         for page in search_results_table:
-            lengths, sub_links, prices, locations, brokers, sale_pending_fields = self.extractor.extract_fields(page)
+            lengths, links, prices, locations, brokers, sale_pending_fields = self.extractor.extract_fields(page)
 
-            for length, sub_link, price, location, broker, sale_pending in zip(lengths, sub_links, prices,
+            for length, link, price, location, broker, sale_pending in zip(lengths, links, prices,
                                                                                locations, brokers,
                                                                                sale_pending_fields):
 
-                link = self.base_url + sub_link
                 # seen before
                 if link in self.links_seen:
                     updates = ItemUpdater.update_already_existing_item(link, price, sale_pending)
@@ -56,7 +55,7 @@ class GemiSpider(scrapy.Spider):
                 # seen first time
                 else:
                     self.links_seen.append(link)
-                    item = NewItemCreator.create_new_item(length, sub_link, link, price, location, broker,
+                    item = NewItemCreator.create_new_item(length, link, price, location, broker,
                                                           days_on_market)
                     NewItemCreator.save_new_item(item)
 

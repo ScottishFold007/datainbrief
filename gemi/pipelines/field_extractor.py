@@ -26,8 +26,10 @@ class FieldExtractor:
         return lengths, links, prices, locations, brokers, sale_pending_fields
 
     @staticmethod
-    def get_maker_model_and_year(sub_link):
+    def get_maker_model_and_year(link):
         # get the year and model from the link
+        base_url =  'https://www.yachtworld.com'
+        sub_link = link.replace(base_url, '')
         split_link = sub_link.split('/')
         year, maker_and_model = split_link[2], split_link[3]
         parts = maker_and_model.split('-')
