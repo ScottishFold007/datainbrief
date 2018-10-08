@@ -36,7 +36,7 @@ class DetailSpider(scrapy.Spider):
             else:
                 continue
 
-        db.update(
+        db.yachts.update_one(
             {'link': item_link},
             {
                 '$set':
