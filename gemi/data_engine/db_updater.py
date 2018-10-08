@@ -1,9 +1,9 @@
-from gemi.util.time_manager import TimeManager
-
+# project packages
 from gemi.database import get_db
 from gemi.data_engine.item_creator import NewItemCreator
 from gemi.data_engine.item_updater import ItemUpdater
-
+from gemi.util.time_manager import TimeManager
+# external packages
 from pymongo.errors import DuplicateKeyError
 
 
