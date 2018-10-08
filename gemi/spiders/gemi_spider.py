@@ -2,7 +2,7 @@
 # packages
 import scrapy
 # self coded modules
-from gemi.data_engine.item_processor import ItemProcessor
+from gemi.data_engine.item_processor import DatabaseUpdater
 from gemi.data_engine.field_extractor import FieldExtractor
 from gemi.util.query_generator import QueryGenerator
 
@@ -19,7 +19,7 @@ class GemiSpider(scrapy.Spider):
         # get urls
         self.start_urls = QueryGenerator.generate_urls_for_search_queries()
         self.extractor = FieldExtractor()
-        self.processor = ItemProcessor()
+        self.updater = DatabaseUpdater()
 
     # Send urls to parse
     def start_requests(self):
@@ -41,7 +41,7 @@ class GemiSpider(scrapy.Spider):
                                                                            sale_pending_fields):
 
                 item_data = [length, sub_link, price, location, broker, sale_pending, days_on_market]
-                self.processor.update_and_save_item_data(item_data)
+                self.updater.update_item_data(item_data)
 
                 yield None
 

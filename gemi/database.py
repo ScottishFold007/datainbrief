@@ -10,10 +10,10 @@ def get_client():
                        authMechanism='SCRAM-SHA-1')
 
 
-def get_client_and_db():
+def get_db():
     client = get_client()
-    database = client['gemi']
-    return client, database
+    db_name = 'gemi'
+    return client[db_name]
 
 
 if __name__ == "__main__":
