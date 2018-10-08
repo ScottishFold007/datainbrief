@@ -1,3 +1,9 @@
+from gemi.util.time_manager import TimeManager
+from gemi.util.cleaner import Cleaner
+from gemi.database import db
+
+collection_name = 'yachts'
+
 
 class ItemUpdater(object):
     @staticmethod
@@ -9,6 +15,8 @@ class ItemUpdater(object):
 
     def update_already_existing_item(self, item, price, sale_pending, todays_date):
         updates = dict()
+
+        item = db[collection_name].find_one({"link": link})
 
         if not item:
             return True
@@ -37,3 +45,14 @@ class ItemUpdater(object):
         print('updated: ', updates)
 
         return updates
+
+    @staticmethod
+    def save_updated_item(link, updates):
+        # update only changed fields
+        db.yachts.find_one_and_update(
+            {'link': link},  # filter
+            {
+                '$set': updates,
+                '$inc': {'days_on_market': 1}
+            }
+        )

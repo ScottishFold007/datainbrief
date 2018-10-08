@@ -1,7 +1,12 @@
 from gemi.data_engine.field_extractor import FieldExtractor
 from gemi.util.cleaner import Cleaner
+from gemi.util.time_manager import TimeManager
+from gemi.database import db
+from pymongo.errors import DuplicateKeyError
+
 
 class NewItemCreator(object):
+
     @staticmethod
     def create_new_item(length, sub_link, link, price, location, broker, days_on_market, date):
         length, location, broker = Cleaner.remove_empty_chars_and_new_lines([length, location, broker])
@@ -39,3 +44,11 @@ class NewItemCreator(object):
         print('new item: ', item)
 
         return item
+
+    @staticmethod
+    def save_new_item(item):
+        try:
+            # write new item to the db
+            db.yachts.insert_one(dict(item))
+        except DuplicateKeyError:
+            print('duplicate item')
