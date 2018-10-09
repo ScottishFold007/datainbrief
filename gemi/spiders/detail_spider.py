@@ -13,11 +13,13 @@ class DetailSpider(scrapy.Spider):
     # entry point
     def __init__(self, *args, **kwargs):
         super(DetailSpider, self).__init__(*args, **kwargs)
-        self.start_urls =  db.yachts.find({'details': {'$exists': False}})
+        self.start_urls = db.yachts.distinct('link', {'details': {'$exists': False}})
 
     # Send urls to parse
     def start_requests(self):
         for url in self.start_urls:
+            if 'http' not in url:
+                continue
             yield scrapy.Request(url=url, meta={'url': url}, callback=self.parse)
 
     def parse(self, response):
@@ -46,4 +48,4 @@ class DetailSpider(scrapy.Spider):
             }
         )
 
-        yield None
+        yield specs

@@ -75,7 +75,7 @@ CRAWLERA_APIKEY = 'd7c7bd4fc59540adb1f53eee8403bebc'
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://doc.scrapy.org/en/latest/topics/autothrottle.html
-# AUTOTHROTTLE_ENABLED = False
+AUTOTHROTTLE_ENABLED = False
 # The initial download delay
 # AUTOTHROTTLE_START_DELAY = 3
 # The maximum download delay to be set in case of high latencies
