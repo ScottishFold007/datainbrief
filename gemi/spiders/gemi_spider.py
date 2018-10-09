@@ -9,7 +9,7 @@ from gemi.pipelines.item_creator import NewItemCreator
 from gemi.pipelines.item_updater import ItemUpdater
 from gemi.pipelines.status_updater import StatusUpdater
 # db
-from gemi.database import db
+from gemi.database import db, collection_name
 
 
 class GemiSpider(scrapy.Spider):
@@ -17,7 +17,7 @@ class GemiSpider(scrapy.Spider):
     domain = 'yachtworld.com'
     base_url = 'https://www.yachtworld.com'
     allowed_domains = [domain]
-    collection_name = 'yachts'
+    boats_seen = 0
 
     # entry point
     def __init__(self, next_page=True, *args, **kwargs):
@@ -26,7 +26,7 @@ class GemiSpider(scrapy.Spider):
         # get urls
         self.start_urls = QueryGenerator.generate_urls_for_search_queries()
         self.extractor = FieldExtractor()
-        self.links_seen = db[self.collection_name].distinct('link')
+        self.links_seen = db[collection_name].distinct('link')
         StatusUpdater.set_initial_status()
 
     # Send urls to parse
@@ -68,3 +68,6 @@ class GemiSpider(scrapy.Spider):
             if next_page_href is not None:
                 next_page_url = self.base_url + next_page_href
                 yield response.follow(next_page_url, meta=response.meta, callback=self.parse)
+
+    def spider_closed(self, spider):
+        StatusUpdater.record_removed_items()

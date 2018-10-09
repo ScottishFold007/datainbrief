@@ -9,4 +9,6 @@ client = MongoClient(host='mongodb://<dbuser>:<dbpassword>@ds237072.mlab.com:370
 
 db_name = 'gemi'
 db = client[db_name]
+collection_name = 'boats'
+
 

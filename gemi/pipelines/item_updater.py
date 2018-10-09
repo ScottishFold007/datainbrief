@@ -1,8 +1,7 @@
 from gemi.util.cleaner import Cleaner
-from gemi.database import db
+from gemi.database import db, collection_name
 from gemi.util.time_manager import date_now, str_to_date
 
-collection_name = 'yachts'
 
 
 class ItemUpdater(object):
@@ -30,18 +29,25 @@ class ItemUpdater(object):
         last_price = item['price']
 
         if last_price != price:
-            updates['status.price_changed'] = True
-            updates['price'] = Cleaner.clean_price(price)
-            updates['dates.price_changed'] = date_now
+            updates = {
+                'price': Cleaner.clean_price(price),
+                'updated': True,
+                'dates.price_changed': date_now,
+                'dates.last-updated': date_now,
+                'status.removed':False,
+                'status.active':True,
+                'status.price_changed': True,
+            }
+
+            try:
+                updates['old_prices'] = item['old_prices'].append(last_price)
+            except KeyError:
+                updates['old_prices'] = [last_price]
 
         # check sale status
         if sale_pending:
             updates['status.sale_pending'] = True
             updates['dates.sale_pending'] = date_now
-
-        updates['updated'] = True
-        updates['status.removed'] = False
-        updates['dates.last-updated'] = date_now
 
         print('updated: ', updates)
 
@@ -50,7 +56,7 @@ class ItemUpdater(object):
     @staticmethod
     def save_updated_item(link, updates):
         # update only changed fields
-        db.yachts.find_one_and_update(
+        db[collection_name].find_one_and_update(
             {'link': link},  # filter
             {
                 '$set': updates,
