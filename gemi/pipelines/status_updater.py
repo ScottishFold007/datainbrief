@@ -1,5 +1,5 @@
 # project packages
-from gemi.database import db
+from gemi.database import db, collection_name
 from gemi.util.time_manager import date_now
 
 
@@ -8,7 +8,7 @@ class StatusUpdater(object):
     @staticmethod
     def set_initial_status():
         # set all as not updated first
-        db.yachts.update_many(
+        db[collection_name].update_many(
             {"dates.last-updated": {"$lt": date_now}},  # select unsold items
             {
                 '$set': {'status.updated': False}
@@ -18,12 +18,15 @@ class StatusUpdater(object):
     @staticmethod
     def record_removed_items():
         # prepare updates
-        updates = dict()
-        updates['status.removed'] = True
-        updates['dates.removed'] = date_now
+        updates = {
+            'status.removed': True,
+            'status.active': False,
+            'status.sale_pending': False,
+            'dates.removed': date_now
+        }
 
         # get untouched items and update
-        db.yachts.update_many(
+        db[collection_name].update_many(
             {'status.updated': False},
             {'$set': updates}
         )

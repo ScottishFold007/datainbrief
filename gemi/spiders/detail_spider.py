@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # packages
 import scrapy
-from gemi.database import db
+from gemi.database import db, collection_name
 
 
 class DetailSpider(scrapy.Spider):
@@ -13,7 +13,7 @@ class DetailSpider(scrapy.Spider):
     # entry point
     def __init__(self, *args, **kwargs):
         super(DetailSpider, self).__init__(*args, **kwargs)
-        self.start_urls = db.yachts.distinct('link', {'details': {'$exists': False}})
+        self.start_urls = db[collection_name].distinct('link', {'details': {'$exists': False}})
 
     # Send urls to parse
     def start_requests(self):
@@ -38,7 +38,7 @@ class DetailSpider(scrapy.Spider):
             else:
                 continue
 
-        db.yachts.update_one(
+        db[collection_name].update_one(
             {'link': item_link},
             {
                 '$set':
