@@ -33,6 +33,7 @@ class DetailSpider(scrapy.Spider):
             line = line.split(':')
             if len(line) == 2:
                 spec_key = " ".join(line[0].split())
+                spec_key.replace(' ', '_')
                 spec_value = " ".join(line[1].split())
                 specs[spec_key] = spec_value
             else:

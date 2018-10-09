@@ -12,3 +12,13 @@ db = client[db_name]
 collection_name = 'boats'
 
 
+if __name__ == "__main__":
+    db[collection_name].update_many({}, {'$rename': {'details.engine hours': 'details.engine_hours'}})
+
+    x = db[collection_name].find(
+        {
+            'details.engine_hours': {"$exists": True},
+        }
+    )
+
+    print(x.count())
