@@ -76,13 +76,15 @@ CRAWLERA_APIKEY = 'd7c7bd4fc59540adb1f53eee8403bebc'
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://doc.scrapy.org/en/latest/topics/autothrottle.html
 AUTOTHROTTLE_ENABLED = False
+CONCURRENT_REQUESTS = True
+CONCURRENT_REQUESTS_PER_DOMAIN = 150
 # The initial download delay
 # AUTOTHROTTLE_START_DELAY = 3
 # The maximum download delay to be set in case of high latencies
 # AUTOTHROTTLE_MAX_DELAY = 5
 # The average number of requests Scrapy should be sending in parallel to
 # each remote server
-# AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0
+# AUTOTHROTTLE_TARGET_CONCURRENCY = 150
 # Enable showing throttling stats for every response received:
 # AUTOTHROTTLE_DEBUG = False
 
