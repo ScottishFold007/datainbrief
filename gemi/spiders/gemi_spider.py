@@ -45,8 +45,8 @@ class GemiSpider(scrapy.Spider):
             lengths, links, prices, locations, brokers, sale_pending_fields = self.extractor.extract_fields(page)
 
             for length, link, price, location, broker, sale_pending in zip(lengths, links, prices,
-                                                                           locations, brokers,
-                                                                           sale_pending_fields):
+                                                                               locations, brokers,
+                                                                               sale_pending_fields):
 
                 # seen before
                 if link in self.links_seen:
