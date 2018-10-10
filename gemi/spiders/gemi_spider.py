@@ -47,7 +47,7 @@ class GemiSpider(scrapy.Spider):
             for length, link, price, location, broker, sale_pending in zip(lengths, links, prices,
                                                                            locations, brokers,
                                                                            sale_pending_fields):
-
+                self.logger.info(sale_pending+'\n')
                 # seen before
                 if link in self.links_seen:
                     updates = ItemUpdater.update_already_existing_item(link, price, sale_pending)

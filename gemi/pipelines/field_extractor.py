@@ -7,7 +7,7 @@ class FieldExtractor:
     length_selector = 'div.make-model a span.length::text'
     price_selector = 'div.price::text'
     location_selector = 'div.location::text'
-    sale_pending = 'div.location span.active_field'
+    sale_pending = 'div.location span.active_field::text'
     broker_selector = 'div.broker::text'
 
     def extract_fields(self, page):

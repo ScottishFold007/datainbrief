@@ -3,7 +3,6 @@ from gemi.database import db, collection_name
 from gemi.util.time_manager import date_now, str_to_date
 
 
-
 class ItemUpdater(object):
     @staticmethod
     def is_already_updated(item):
@@ -34,13 +33,14 @@ class ItemUpdater(object):
                 'updated': True,
                 'dates.price_changed': date_now,
                 'dates.last-updated': date_now,
-                'status.removed':False,
-                'status.active':True,
+                'status.removed': False,
+                'status.active': True,
                 'status.price_changed': True,
             }
 
             try:
-                updates['old_prices'] = item['old_prices'].append(last_price)
+                old_prices = item['old_prices']
+                updates['old_prices'] = old_prices.append(last_price)
             except KeyError:
                 updates['old_prices'] = [last_price]
 
