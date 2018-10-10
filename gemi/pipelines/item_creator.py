@@ -40,6 +40,7 @@ class NewItemCreator(object):
             'maker': maker,
             'model': model,
             'maker model': maker + model,
+            'title': maker + model + year + length,
             'year': year,
             'days_on_market': days_on_market
         }
