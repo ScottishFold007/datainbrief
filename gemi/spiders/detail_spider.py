@@ -39,6 +39,12 @@ class DetailSpider(scrapy.Spider):
             else:
                 continue
 
+        DetailSpider.save_details(item_link, specs)
+
+        yield specs
+
+    @staticmethod
+    def save_details(item_link, specs):
         db[collection_name].update_one(
             {'link': item_link},
             {
@@ -48,5 +54,3 @@ class DetailSpider(scrapy.Spider):
                     }
             }
         )
-
-        yield specs
