@@ -6,7 +6,7 @@ from gemi.util.time_manager import date_now, str_to_date
 class ItemUpdater(object):
     @staticmethod
     def is_already_updated(item):
-        last_updated = str_to_date(item['dates']['last-updated'])
+        last_updated = str_to_date(item['dates']['last_updated'])
         if last_updated == date_now:  # already updated today
             print(last_updated.isoformat(), 'already updated today')
             return True
@@ -46,7 +46,7 @@ class ItemUpdater(object):
                 'price': Cleaner.clean_price(price),
                 'updated': True,
                 'dates.price_changed': date_now,
-                'dates.last-updated': date_now,
+                'dates.last_updated': date_now,
                 'status.removed': False,
                 'status.active': True,
                 'status.price_changed': True,

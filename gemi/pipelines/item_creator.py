@@ -29,18 +29,16 @@ class NewItemCreator(object):
                 'updated': True,
                 'removed': False,
                 'sold': False,
-                'sale-pending': False,
-                'price-changed': False
+                'sale_pending': False,
+                'price_changed': False
             },
             'dates': {
                 'crawled': date_now,
-                'last-updated': date_now
+                'last_updated': date_now
             },
             'price': Cleaner.clean_price(price),
             'maker': maker,
             'model': model,
-            'maker model': maker + model,
-            'title': maker + model + year + length,
             'year': year,
             'days_on_market': days_on_market
         }
