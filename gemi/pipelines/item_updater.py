@@ -51,16 +51,12 @@ class ItemUpdater(object):
         last_price = item['price']
         if last_price != price:
             price_updates = {
+                'old_price': last_price,
                 'price': Cleaner.clean_price(price),
                 'dates.price_changed': date_now,
                 'status.price_changed': True
             }
 
-            try:
-                old_prices = item['old_prices']
-                price_updates['old_prices'] = old_prices.append(last_price)
-            except KeyError:
-                price_updates['old_prices'] = [last_price]
         else:
             price_updates = {}
         return price_updates
