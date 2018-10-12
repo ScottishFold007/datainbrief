@@ -23,10 +23,18 @@ class ItemUpdater(object):
         if cls.is_already_updated(item):
             return True
 
+        status_updates = {
+            'dates.last_updated': date_now,
+            'status.updated': True,
+            'status.removed': False,
+            'status.active': True
+        }
+
         price_updates = ItemUpdater.check_price_changes(item, price)
         sale_updates = ItemUpdater.check_sale_status(sale_pending)
+
         # merge dicts
-        updates = {**price_updates, **sale_updates}
+        updates = {**status_updates, **price_updates, **sale_updates}
 
         print('updated: ', updates)
 
@@ -44,12 +52,8 @@ class ItemUpdater(object):
         if last_price != price:
             price_updates = {
                 'price': Cleaner.clean_price(price),
-                'updated': True,
                 'dates.price_changed': date_now,
-                'dates.last_updated': date_now,
-                'status.removed': False,
-                'status.active': True,
-                'status.price_changed': True,
+                'status.price_changed': True
             }
 
             try:
