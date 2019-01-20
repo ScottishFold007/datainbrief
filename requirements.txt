@@ -1,4 +1,0 @@
-Scrapy
-scrapy-crawlera
-pymongo
-setuptools
