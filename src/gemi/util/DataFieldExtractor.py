@@ -34,7 +34,7 @@ class DataFieldExtractor(object):
         year, model = split_link[2], split_link[3]
         model = model.split('-')
         # the last element is irrelevant
-        model = " ".join(model[:-1]).lowercase()
+        model = " ".join(model[:-1]).lower()
         return {
             'model': model,
             'year': year
