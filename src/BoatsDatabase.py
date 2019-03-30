@@ -1,9 +1,6 @@
 from pymongo import MongoClient
 from src.BaseClasses.BaseDB import BaseDB
 from src.helpers.date_time import todays_date, date_of_x_days_ago
-import re
-from tqdm import tqdm
-from pymongo.errors import CursorNotFound, DuplicateKeyError
 
 
 class BoatsDatabase(BaseDB):
@@ -59,8 +56,3 @@ class BoatsDatabase(BaseDB):
                 }
             }
         )
-
-
-
-
-
