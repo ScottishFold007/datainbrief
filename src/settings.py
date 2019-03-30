@@ -9,16 +9,14 @@
 #     https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://doc.scrapy.org/en/latest/topics/spider-middleware.html
 
-BOT_NAME = 'src'
+BOT_NAME = 'roxy'
 
 SPIDER_MODULES = ['src.spiders']
 NEWSPIDER_MODULE = 'src.spiders'
 
-
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'src (+http://www.yourdomain.com)'
 
-# Obey robots.txt rules
 ROBOTSTXT_OBEY = True
 
 FEED_EXPORT_ENCODING = 'utf-8'
@@ -77,10 +75,14 @@ CRAWLERA_APIKEY = 'd7c7bd4fc59540adb1f53eee8403bebc'
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://doc.scrapy.org/en/latest/topics/autothrottle.html
+
+
 AUTOTHROTTLE_ENABLED = True
 AUTOTHROTTLE_START_DELAY = 20
 CRAWLERA_PRESERVE_DELAY = True
 DOWNLOAD_DELAY = 20
+
+
 # The initial download delay
 #AUTOTHROTTLE_START_DELAY = 5
 # The maximum download delay to be set in case of high latencies
