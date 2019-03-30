@@ -1,7 +1,13 @@
 from scrapy import Request
 from src.spiders.base import BaseSpider
-from src.helpers import URLManager
-from src.helpers import DataFieldExtractor
+from src.helpers.URLManager import URLManager
+from src.helpers.DataFieldExtractor import DataFieldExtractor
+from enum import Enum
+
+
+class Selectors(Enum):
+    search_results_table_selector = '// *[ @ id = "searchResultsDetailsABTest"]/div'
+    next_page_button_selector = 'div.searchResultsNav span.navNext a.navNext::attr(href)'
 
 
 class BasicSpider(BaseSpider):
@@ -12,6 +18,7 @@ class BasicSpider(BaseSpider):
             'src.pipelines.BasicPipeline': 200,
         }
     }
+
 
     # entry point
     def __init__(self, *args, **kwargs):
@@ -27,8 +34,7 @@ class BasicSpider(BaseSpider):
 
     def parse(self, response):
         # define the data to process
-        search_results_table_selector = '// *[ @ id = "searchResultsDetailsABTest"]/div'
-        search_results_table = response.xpath(search_results_table_selector)
+        search_results_table = response.xpath(Selectors.search_results_table_selector)
         for row in search_results_table:
             item = self.data_field_extractor.extract_item(row)
             if item['link'] == '':
@@ -38,8 +44,7 @@ class BasicSpider(BaseSpider):
 
         # follow to the next page
         if self.next_page:
-            next_page_button_selector = 'div.searchResultsNav span.navNext a.navNext::attr(href)'
-            next_page_href = response.css(next_page_button_selector).extract_first()
+            next_page_href = response.css(Selectors.next_page_button_selector).extract_first()
             if next_page_href is not None:
                 next_page_url = self.base_url + next_page_href
                 yield response.follow(next_page_url, meta=response.meta, callback=self.parse)

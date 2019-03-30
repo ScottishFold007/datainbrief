@@ -1,5 +1,10 @@
 from src.db import db
 from scrapy import Request, Spider
+from enum import Enum
+
+
+class Selectors(Enum):
+    full_spec_selector = 'div.fullspecs div:first-child::text'
 
 
 class DetailSpider(Spider):
@@ -22,11 +27,8 @@ class DetailSpider(Spider):
                 continue
             yield Request(url=url, meta={'url': url}, callback=self.parse)
 
-    def parse(self, response):
-        full_spec_selector = 'div.fullspecs div:first-child::text'
-        full_specs = response.css(full_spec_selector).extract()
-        item_link = response.meta['url']
-
+    @staticmethod
+    def get_specs(full_specs):
         specs = dict()
         for line in full_specs:
             line = " ".join(line.split()).lower()
@@ -40,6 +42,13 @@ class DetailSpider(Spider):
                 specs[spec_key] = spec_value
             else:
                 continue
+
+        return specs
+
+    def parse(self, response):
+        full_specs = response.css(Selectors.full_spec_selector).extract()
+        item_link = response.meta['url']
+        specs = self.get_specs(full_specs)
 
         yield {
             'link': item_link,
