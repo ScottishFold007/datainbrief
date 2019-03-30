@@ -4,9 +4,9 @@
 #
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: https://doc.scrapy.org/en/latest/topics/item-pipeline.html
-from gemi.BoatsDatabase import boats_database
-from gemi.processors.ItemCreator import ItemCreator
-from gemi.processors.ItemUpdater import ItemUpdater
+from src import boats_database
+from src.helpers.ItemCreator import ItemCreator
+from src.helpers import ItemUpdater
 
 
 class GemiPipeline(object):

@@ -1,7 +1,7 @@
-from gemi.BaseClasses.BaseSpider import AbstractSpider
+from src import AbstractSpider
 from scrapy import Request
-from gemi.util.URLGenerator import URLManager
-from gemi.util.DataFieldExtractor import DataFieldExtractor
+from src import URLManager
+from src.helpers import DataFieldExtractor
 
 
 class BoatSpider(AbstractSpider):
@@ -13,7 +13,7 @@ class BoatSpider(AbstractSpider):
 
     custom_settings = {
         'ITEM_PIPELINES': {
-            'gemi.pipelines.GemiPipeline': 200,
+            'src.pipelines.GemiPipeline': 200,
         }
     }
 

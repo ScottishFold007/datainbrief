@@ -1,20 +1,20 @@
 from pymongo import MongoClient
-from gemi.BaseClasses.BaseDB import BaseDB
-from gemi.helpers.date_time import todays_date, date_of_x_days_ago
+from src.BaseClasses.BaseDB import BaseDB
+from src.helpers.date_time import todays_date, date_of_x_days_ago
 import re
 from tqdm import tqdm
 from pymongo.errors import CursorNotFound, DuplicateKeyError
 
 
 class BoatsDatabase(BaseDB):
-    client = MongoClient(host='mongodb://<dbuser>:<dbpassword>@ds237072.mlab.com:37072/gemi',
+    client = MongoClient(host='mongodb://<dbuser>:<dbpassword>@ds237072.mlab.com:37072/src',
                          port=47450,
                          username='roxy',
                          password='gemicik1',
-                         authSource='gemi',
+                         authSource='src',
                          authMechanism='SCRAM-SHA-1')
 
-    db_name = 'gemi'
+    db_name = 'src'
     db = client[db_name]
     collection_name = 'boats'
 
@@ -131,16 +131,10 @@ def lowercase_model_fix_links():
                 }
             )
         except DuplicateKeyError:
-            
+            pass
 
 
-if __name__ == "__main__":
-    '''
-    lowercase
-    http links -> if same -> ? 
 
-
-    '''
 
 
 

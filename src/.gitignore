@@ -1,5 +1,0 @@
-venv
-build
-*.pyc
-.idea
-project.egg-info

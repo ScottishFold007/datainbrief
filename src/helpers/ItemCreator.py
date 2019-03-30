@@ -1,8 +1,6 @@
-from gemi.util.DataFieldExtractor import DataFieldExtractor
-
-from gemi.helpers.date_time import todays_date
-from gemi.helpers.cleaner import clean_price
-from gemi.BoatsDatabase import boats_database
+from src.helpers import todays_date, DataFieldExtractor
+from src.helpers import clean_price
+from src import boats_database
 
 
 class ItemCreator(object):

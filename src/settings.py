@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Scrapy settings for gemi project
+# Scrapy settings for src project
 #
 # For simplicity, this file contains only settings considered important or
 # commonly used. You can find more settings consulting the documentation:
@@ -9,14 +9,14 @@
 #     https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://doc.scrapy.org/en/latest/topics/spider-middleware.html
 
-BOT_NAME = 'gemi'
+BOT_NAME = 'src'
 
-SPIDER_MODULES = ['gemi.spiders']
-NEWSPIDER_MODULE = 'gemi.spiders'
+SPIDER_MODULES = ['src.spiders']
+NEWSPIDER_MODULE = 'src.spiders'
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-#USER_AGENT = 'gemi (+http://www.yourdomain.com)'
+#USER_AGENT = 'src (+http://www.yourdomain.com)'
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True
@@ -54,13 +54,13 @@ CRAWLERA_APIKEY = 'd7c7bd4fc59540adb1f53eee8403bebc'
 # Enable or disable spider middlewares
 # See https://doc.scrapy.org/en/latest/topics/spider-middleware.html
 #SPIDER_MIDDLEWARES = {
-#    'gemi.middlewares.GemiSpiderMiddleware': 543,
+#    'src.middlewares.GemiSpiderMiddleware': 543,
 #}
 
 # Enable or disable downloader middlewares
 # See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
 #DOWNLOADER_MIDDLEWARES = {
-#    'gemi.middlewares.GemiDownloaderMiddleware': 543,
+#    'src.middlewares.GemiDownloaderMiddleware': 543,
 #}
 
 # Enable or disable extensions
@@ -72,7 +72,7 @@ CRAWLERA_APIKEY = 'd7c7bd4fc59540adb1f53eee8403bebc'
 # Configure item processors
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 #ITEM_PIPELINES = {
-#    'gemi.processors.GemiPipeline': 300,
+#    'src.processors.GemiPipeline': 300,
 #}
 
 # Enable and configure the AutoThrottle extension (disabled by default)

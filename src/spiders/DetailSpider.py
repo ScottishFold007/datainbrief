@@ -1,5 +1,5 @@
-from gemi.base.AbstractClasses.AbstractSpider import AbstractSpider
-from gemi.BoatsDatabase import boats_database
+from src import AbstractSpider
+from src import boats_database
 from scrapy import Request
 
 
@@ -12,7 +12,7 @@ class DetailSpider(AbstractSpider):
 
     custom_settings = {
         'ITEM_PIPELINES': {
-            'gemi.pipelines.DetailPipeline': 200,
+            'src.pipelines.DetailPipeline': 200,
         }
     }
 

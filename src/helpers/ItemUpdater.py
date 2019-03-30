@@ -1,6 +1,6 @@
-from gemi.helpers.cleaner import clean_price
-from gemi.helpers.date_time import todays_date, str_to_date
-from gemi.BoatsDatabase import boats_database
+from src.helpers import clean_price
+from src.helpers import todays_date, str_to_date
+from src import boats_database
 
 
 class ItemUpdater(object):
