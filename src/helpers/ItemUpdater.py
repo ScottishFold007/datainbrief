@@ -1,5 +1,5 @@
-from src.helpers import clean_price
-from src.helpers import todays_date, str_to_date
+from src.util.Cleaner import clean_price
+from src.util.DateTime import todays_date, str_to_date
 from src.db import db
 
 
