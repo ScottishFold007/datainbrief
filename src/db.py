@@ -4,7 +4,7 @@ from pymongo.errors import DuplicateKeyError
 
 
 class BoatsDatabase(object):
-    client = MongoClient(host='mongodb://<dbuser>:<dbpassword>@ds237072.mlab.com:37072/src',
+    client = MongoClient(host='mongodb://<dbuser>:<dbpassword>@ds237072.mlab.com:37072/gemi',
                          port=47450,
                          username='roxy',
                          password='gemicik1',
