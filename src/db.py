@@ -8,7 +8,7 @@ class BoatsDatabase(object):
                          port=47450,
                          username='roxy',
                          password='gemicik1',
-                         authSource='src',
+                         authSource='gemi',
                          authMechanism='SCRAM-SHA-1')
 
     db_name = 'gemi'
