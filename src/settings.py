@@ -17,7 +17,7 @@ NEWSPIDER_MODULE = 'src.spiders'
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'src (+http://www.yourdomain.com)'
 
-ROBOTSTXT_OBEY = True
+ROBOTSTXT_OBEY = False
 
 FEED_EXPORT_ENCODING = 'utf-8'
 COOKIES_ENABLED = False
