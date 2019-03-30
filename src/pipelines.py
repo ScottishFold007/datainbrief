@@ -9,7 +9,7 @@ from src.helpers.ItemCreator import ItemCreator
 from src.helpers import ItemUpdater
 
 
-class GemiPipeline(object):
+class BasicPipeline(object):
     def __init__(self):
         db.check_removed_items()
         self.links_seen = db.get_distinct_links()

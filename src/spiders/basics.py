@@ -9,7 +9,7 @@ class BasicSpider(BaseSpider):
 
     custom_settings = {
         'ITEM_PIPELINES': {
-            'src.pipelines.GemiPipeline': 200,
+            'src.pipelines.BasicPipeline': 200,
         }
     }
 
