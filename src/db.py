@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-from src.helpers.date_time import todays_date, date_of_x_days_ago
+from src.helpers.DateTime import todays_date, date_of_x_days_ago
 from pymongo.errors import DuplicateKeyError
 
 
@@ -116,3 +116,6 @@ class BoatsDatabase(object):
     @classmethod
     def delete_if_a_field_does_not_exist(cls, field_name):
         cls.db[cls.collection_name].delete_many({field_name: {"$exists": False}})
+
+
+db = BoatsDatabase()

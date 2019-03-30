@@ -1,6 +1,7 @@
-from src.helpers import todays_date, DataFieldExtractor
-from src.helpers import clean_price
-from src import boats_database
+from src.helpers.DateTime import todays_date
+from src.helpers.DataFieldExtractor import DataFieldExtractor
+from src.helpers.Cleaner import clean_price
+from src import db
 
 
 class ItemCreator(object):
@@ -28,4 +29,4 @@ class ItemCreator(object):
         }
         item.update(new_data)
 
-        boats_database.save_new_item(item)
+        db.save_new_item(item)

@@ -1,6 +1,6 @@
 from src.helpers import clean_price
 from src.helpers import todays_date, str_to_date
-from src import boats_database
+from src.db import db
 
 
 class ItemUpdater(object):
@@ -16,7 +16,7 @@ class ItemUpdater(object):
 
         link, price, sale_pending = item['link'], item['price'], item['sale_pending']
 
-        saved_item = boats_database.get_a_single_item_by_key("link", link)
+        saved_item = db.get_a_single_item_by_key("link", link)
 
         if not saved_item:
             return True
@@ -36,7 +36,7 @@ class ItemUpdater(object):
         # merge dicts
         updates = {**status_updates, **price_updates, **sale_updates}
 
-        boats_database.update_item(link, updates)
+        db.update_item(link, updates)
 
     @staticmethod
     def check_sale_status(sale_pending):

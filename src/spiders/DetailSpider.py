@@ -1,12 +1,11 @@
-from src import AbstractSpider
-from src import boats_database
-from scrapy import Request
+from src.db import db
+from scrapy import Request, Spider
 
 
-class DetailSpider(AbstractSpider):
+class DetailSpider(Spider):
     name = 'boat_details'
     next_page = False
-    start_urls = boats_database.get_items_without_details()
+    start_urls = db.get_items_without_details()
     base_url = 'https://www.yachtworld.com'
     allowed_domains = ['yachtworld.com']
 

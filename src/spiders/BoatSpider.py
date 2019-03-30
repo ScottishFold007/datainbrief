@@ -1,10 +1,9 @@
-from src import AbstractSpider
-from scrapy import Request
-from src import URLManager
+from scrapy import Request, Spider
+from src.helpers import URLManager
 from src.helpers import DataFieldExtractor
 
 
-class BoatSpider(AbstractSpider):
+class BoatSpider(Spider):
     name = 'boats'
     start_urls = list()
     base_url = 'https://www.yachtworld.com'
