@@ -3,11 +3,7 @@ from scrapy import Request, Spider
 
 
 class DetailSpider(Spider):
-    name = 'boat_details'
-    next_page = False
-    start_urls = db.get_items_without_details()
-    base_url = 'https://www.yachtworld.com'
-    allowed_domains = ['yachtworld.com']
+    name = 'details'
 
     custom_settings = {
         'ITEM_PIPELINES': {
@@ -17,6 +13,7 @@ class DetailSpider(Spider):
 
     def __init__(self, *args, **kwargs):
         super(DetailSpider, self).__init__(*args, **kwargs)
+        self.start_urls = db.get_items_without_details()
 
     # Send urls to parse
     def start_requests(self):

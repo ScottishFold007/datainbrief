@@ -1,14 +1,11 @@
-from scrapy import Request, Spider
+from scrapy import Request
+from src.spiders.base import BaseSpider
 from src.helpers import URLManager
 from src.helpers import DataFieldExtractor
 
 
-class BoatSpider(Spider):
-    name = 'boats'
-    start_urls = list()
-    base_url = 'https://www.yachtworld.com'
-    allowed_domains = ['yachtworld.com']
-    next_page = True
+class BasicSpider(BaseSpider):
+    name = 'basics'
 
     custom_settings = {
         'ITEM_PIPELINES': {
@@ -18,9 +15,10 @@ class BoatSpider(Spider):
 
     # entry point
     def __init__(self, *args, **kwargs):
-        super(BoatSpider, self).__init__(*args, **kwargs)
+        super(BasicSpider, self).__init__(*args, **kwargs)
         self.url_manager = URLManager()
         self.data_field_extractor = DataFieldExtractor()
+        self.next_page = True
 
     # Send urls to parse
     def start_requests(self):
