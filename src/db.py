@@ -11,7 +11,7 @@ class BoatsDatabase(object):
                          authSource='src',
                          authMechanism='SCRAM-SHA-1')
 
-    db_name = 'src'
+    db_name = 'gemi'
     db = client[db_name]
     collection_name = 'boats'
 
