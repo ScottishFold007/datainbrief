@@ -3,9 +3,9 @@ from scrapy import Request, Spider
 from enum import Enum
 
 
-class Selectors(Enum):
+class Constants(Enum):
     full_spec_selector = 'div.fullspecs div:first-child::text'
-
+    engine_hours = 'engine_hours'
 
 class DetailSpider(Spider):
     name = 'details'
@@ -37,7 +37,7 @@ class DetailSpider(Spider):
                 spec_key = " ".join(line[0].split())
                 spec_key.replace(' ', '_')
                 spec_value = " ".join(line[1].split())
-                if spec_key == 'engine_hours':
+                if spec_key == Constants.engine_hours:
                     spec_value = int(spec_value)
                 specs[spec_key] = spec_value
             else:
@@ -46,7 +46,7 @@ class DetailSpider(Spider):
         return specs
 
     def parse(self, response):
-        full_specs = response.css(Selectors.full_spec_selector).extract()
+        full_specs = response.css(Constants.full_spec_selector).extract()
         item_link = response.meta['url']
         specs = self.get_specs(full_specs)
 

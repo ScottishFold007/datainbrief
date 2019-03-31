@@ -5,9 +5,11 @@ from src.helpers.DataFieldExtractor import DataFieldExtractor
 from enum import Enum
 
 
-class Selectors(Enum):
+class Constants(Enum):
     search_results_table_selector = '// *[ @ id = "searchResultsDetailsABTest"]/div'
     next_page_button_selector = 'div.searchResultsNav span.navNext a.navNext::attr(href)'
+    days = 'days_on_market'
+    link = 'link'
 
 
 class BasicSpider(BaseSpider):
@@ -19,7 +21,6 @@ class BasicSpider(BaseSpider):
         }
     }
 
-
     # entry point
     def __init__(self, *args, **kwargs):
         super(BasicSpider, self).__init__(*args, **kwargs)
@@ -30,22 +31,21 @@ class BasicSpider(BaseSpider):
     # Send urls to parse
     def start_requests(self):
         for day, url in self.url_manager.url_generator():
-            yield Request(url=url, meta={'days_on_market': day}, callback=self.parse)
+            yield Request(url=url, meta={Constants.days: day}, callback=self.parse)
 
     def parse(self, response):
         # define the data to process
-        search_results_table = response.xpath(Selectors.search_results_table_selector)
+        search_results_table = response.xpath(Constants.search_results_table_selector)
         for row in search_results_table:
             item = self.data_field_extractor.extract_item(row)
-            if item['link'] == '':
+            if item[Constants.link] == '':
                 continue
-            item['days_on_market'] = response.meta['days_on_market']
+            item[Constants.days] = response.meta[Constants.days]
             yield item
 
         # follow to the next page
         if self.next_page:
-            next_page_href = response.css(Selectors.next_page_button_selector).extract_first()
+            next_page_href = response.css(Constants.next_page_button_selector).extract_first()
             if next_page_href is not None:
                 next_page_url = self.base_url + next_page_href
                 yield response.follow(next_page_url, meta=response.meta, callback=self.parse)
-
