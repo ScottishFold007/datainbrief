@@ -7,6 +7,7 @@ class Constants(Enum):
     full_spec_selector = 'div.fullspecs div:first-child::text'
     engine_hours = 'engine_hours'
 
+
 class DetailSpider(Spider):
     name = 'details'
 
@@ -28,29 +29,29 @@ class DetailSpider(Spider):
             yield Request(url=url, meta={'url': url}, callback=self.parse)
 
     @staticmethod
-    def get_specs(full_specs):
-        specs = dict()
+    def get_details(full_specs):
+        details = dict()
         for line in full_specs:
             line = " ".join(line.split()).lower()
             line = line.split(':')
             if len(line) == 2:
-                spec_key = " ".join(line[0].split())
-                spec_key.replace(' ', '_')
-                spec_value = " ".join(line[1].split())
-                if spec_key == Constants.engine_hours:
-                    spec_value = int(spec_value)
-                specs[spec_key] = spec_value
+                detail_key = " ".join(line[0].split())
+                detail_key.replace(' ', '_')
+                detail_value = " ".join(line[1].split())
+                if detail_key == Constants.engine_hours:
+                    detail_value = int(detail_value)
+                details[detail_key] = detail_value
             else:
                 continue
 
-        return specs
+        return details
 
     def parse(self, response):
         full_specs = response.css(Constants.full_spec_selector).extract()
         item_link = response.meta['url']
-        specs = self.get_specs(full_specs)
+        details = self.get_details(full_specs)
 
         yield {
             'link': item_link,
-            'details': specs
+            'details': details
         }

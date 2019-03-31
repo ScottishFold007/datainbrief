@@ -48,13 +48,14 @@ class BoatsDatabase(object):
             }
         )
 
-    def save_details(self, link, details):
+    def save_details(self, link, details, hours):
         self.db[self.collection_name].update_one(
             {'link': link},
             {
                 '$set':
                     {
-                        'details': details
+                        'details': details,
+                        'hours': hours
                     }
             }
         )

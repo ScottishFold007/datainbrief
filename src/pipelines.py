@@ -29,5 +29,9 @@ class DetailPipeline(object):
     def process_item(self, item, spider):
         link = item['link']
         details = item['details']
-        db.save_details(link, details)
+        if 'engine_hours' in details:
+            hours = item['engine_hours']
+        else:
+            hours = -1
+        db.save_details(link, details, hours)
         return item
