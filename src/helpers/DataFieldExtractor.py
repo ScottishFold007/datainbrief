@@ -1,4 +1,4 @@
-
+import re
 
 class DataFieldExtractor(object):
     item_selectors = {
@@ -18,6 +18,8 @@ class DataFieldExtractor(object):
                 field_value = row.css(selector).extract_first()
                 if field_value:
                     field_value = " ".join(field_value.split())
+                    if field_key == 'length':
+                        field_value = int(re.findall(r'\d+', field_value)[0])
                 else:
                     field_value = ""
             except TypeError:
@@ -37,7 +39,7 @@ class DataFieldExtractor(object):
         model = " ".join(model[:-1]).lower()
         return {
             'model': model,
-            'year': year
+            'year': int(year)
         }
 
     @staticmethod
