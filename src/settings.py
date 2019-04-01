@@ -26,6 +26,8 @@ DOWNLOADER_MIDDLEWARES = {'scrapy_crawlera.CrawleraMiddleware': 300}
 CRAWLERA_ENABLED = False
 CRAWLERA_APIKEY = 'd7c7bd4fc59540adb1f53eee8403bebc'
 
+RETRY_ENABLED = False
+
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32
 
