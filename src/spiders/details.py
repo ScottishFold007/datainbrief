@@ -1,4 +1,4 @@
-from src.db import db
+from src.helpers.db import db
 from scrapy import Request, Spider
 from enum import Enum
 
@@ -13,7 +13,7 @@ class DetailSpider(Spider):
 
     custom_settings = {
         'ITEM_PIPELINES': {
-            'src.pipelines.DetailPipeline': 200,
+            'src.helpers.pipelines.DetailPipeline': 200,
         }
     }
 

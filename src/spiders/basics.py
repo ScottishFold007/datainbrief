@@ -17,7 +17,7 @@ class BasicSpider(BaseSpider):
 
     custom_settings = {
         'ITEM_PIPELINES': {
-            'src.pipelines.BasicPipeline': 200,
+            'src.helpers.pipelines.BasicPipeline': 200,
         }
     }
 

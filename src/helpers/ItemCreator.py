@@ -1,7 +1,7 @@
 from src.util.DateTime import todays_date
 from src.helpers.FieldExtractor import FieldExtractor
 from src.util.Cleaner import clean_price
-from src import db
+from src.helpers import db_api
 
 
 class ItemCreator(object):
@@ -29,4 +29,4 @@ class ItemCreator(object):
         }
         item.update(new_data)
 
-        db.save_new_item(item)
+        db_api.save_new_item(item)
