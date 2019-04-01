@@ -26,9 +26,9 @@ def get_items_without_details():
     return db[collection].distinct('link', {'details': {'$exists': False}})
 
 
-def save_updated_item(self, link, updates):
+def save_updated_item(link, updates):
     # update only changed fields
-    self.db[self.collection].find_one_and_update(
+    db[collection].find_one_and_update(
         {'link': link},  # filter
         {
             '$set': updates,
@@ -37,8 +37,8 @@ def save_updated_item(self, link, updates):
     )
 
 
-def save_details(self, link, details, hours):
-    self.db[self.collection].update_one(
+def save_details(link, details, hours):
+    db[collection].update_one(
         {'link': link},
         {
             '$set':
@@ -50,11 +50,11 @@ def save_details(self, link, details, hours):
     )
 
 
-def check_removed_items(self):
+def check_removed_items():
     # set all as not updated first
     two_days_ago = date_of_x_days_ago(2)
 
-    self.db[self.collection].update_many(
+    db[collection].update_many(
         {"dates.last_seen": {"$lt": two_days_ago}},
         {
             '$set': {
