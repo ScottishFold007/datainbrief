@@ -1,11 +1,5 @@
 from src.helpers.db import db
 from scrapy import Request, Spider
-from enum import Enum
-
-
-class Constants(Enum):
-    full_spec_selector = 'div.fullspecs div:first-child::text'
-    engine_hours = 'engine_hours'
 
 
 class DetailSpider(Spider):
@@ -16,6 +10,8 @@ class DetailSpider(Spider):
             'src.helpers.pipelines.DetailPipeline': 200,
         }
     }
+
+    full_spec_selector = 'div.fullspecs div:first-child::text'
 
     def __init__(self, *args, **kwargs):
         super(DetailSpider, self).__init__(*args, **kwargs)
@@ -38,7 +34,7 @@ class DetailSpider(Spider):
                 detail_key = " ".join(line[0].split())
                 detail_key.replace(' ', '_')
                 detail_value = " ".join(line[1].split())
-                if detail_key == Constants.engine_hours:
+                if detail_key == 'engine_hours':
                     detail_value = int(detail_value)
                 details[detail_key] = detail_value
             else:
@@ -47,7 +43,7 @@ class DetailSpider(Spider):
         return details
 
     def parse(self, response):
-        full_specs = response.css(Constants.full_spec_selector).extract()
+        full_specs = response.css(self.full_spec_selector).extract()
         item_link = response.meta['url']
         details = self.get_details(full_specs)
 

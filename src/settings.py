@@ -23,7 +23,7 @@ FEED_EXPORT_ENCODING = 'utf-8'
 COOKIES_ENABLED = False
 
 DOWNLOADER_MIDDLEWARES = {'scrapy_crawlera.CrawleraMiddleware': 300}
-CRAWLERA_ENABLED = True
+CRAWLERA_ENABLED = False
 CRAWLERA_APIKEY = 'd7c7bd4fc59540adb1f53eee8403bebc'
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
@@ -77,7 +77,7 @@ CRAWLERA_APIKEY = 'd7c7bd4fc59540adb1f53eee8403bebc'
 # See https://doc.scrapy.org/en/latest/topics/autothrottle.html
 
 
-AUTOTHROTTLE_ENABLED = True
+AUTOTHROTTLE_ENABLED = False
 AUTOTHROTTLE_START_DELAY = 20
 CRAWLERA_PRESERVE_DELAY = True
 DOWNLOAD_DELAY = 20
