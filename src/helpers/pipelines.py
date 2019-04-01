@@ -5,8 +5,8 @@
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 from src.helpers import db_api
-from src.helpers.ItemCreator import ItemCreator
-from src.helpers import ItemUpdater
+from src.helpers.new_item_factory import add_new_item
+from src.helpers.item_updater import get_updates
 
 
 class BasicPipeline(object):
@@ -15,10 +15,15 @@ class BasicPipeline(object):
         self.links_seen = db_api.get_distinct_items_by_key("link")
 
     def process_item(self, item, spider):
-        if item['link'] in self.links_seen:
-            ItemUpdater.update_item(item)
+        link = item['link']
+        if link in self.links_seen:
+            saved_item = db_api.get_a_single_item_by_key({"link": link})
+            updates = get_updates(item, saved_item)
+
+            db_api.save_updated_item(link, updates)
         else:
-            ItemCreator.add_new_item(item)
+            item = add_new_item(item)
+            db_api.save_new_item(item)
         return item
 
     def close_spider(self, spider):

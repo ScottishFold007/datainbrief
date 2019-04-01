@@ -1,7 +1,8 @@
 from scrapy import Request
 from src.spiders.base import BaseSpider
+
 from src.helpers.url_generator import url_generator
-from src.helpers.FieldExtractor import FieldExtractor
+from src.helpers.field_extractor import extract_item
 
 
 class BasicSpider(BaseSpider):
@@ -19,7 +20,6 @@ class BasicSpider(BaseSpider):
     # entry point
     def __init__(self, *args, **kwargs):
         super(BasicSpider, self).__init__(*args, **kwargs)
-        self.field_extractor = FieldExtractor()
         self.next_page = True
 
     # Send urls to parse
@@ -31,7 +31,7 @@ class BasicSpider(BaseSpider):
         # define the data to process
         search_results_table = response.xpath(self.search_results_table_selector)
         for row in search_results_table:
-            item = self.field_extractor.extract_item(row)
+            item = extract_item(row)
             if item['link'] == '':
                 continue
             item['days_on_market'] = response.meta['days_on_market']

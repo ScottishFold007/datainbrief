@@ -1,4 +1,4 @@
-from src.helpers.db import db
+from src.helpers import db_api
 from scrapy import Request, Spider
 
 
@@ -15,7 +15,7 @@ class DetailSpider(Spider):
 
     def __init__(self, *args, **kwargs):
         super(DetailSpider, self).__init__(*args, **kwargs)
-        self.start_urls = db.get_items_without_details()
+        self.start_urls = db_api.get_items_without_details()
 
     # Send urls to parse
     def start_requests(self):

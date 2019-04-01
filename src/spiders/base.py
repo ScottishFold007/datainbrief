@@ -9,7 +9,7 @@ class BaseSpider(scrapy.Spider):
         self.base_url = 'https://' + self.base_domain
         self.allowed_domains = [self.base_domain]
         self.start_urls = list()
-        self.next_page = False
+        self.next_page = True
 
     def parse(self, response):
         pass
