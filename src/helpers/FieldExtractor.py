@@ -1,7 +1,7 @@
 import re
 
 
-class DataFieldExtractor(object):
+class FieldExtractor(object):
     item_selectors = {
         'length': 'div.make-model a span.length::text',
         'location': 'div.location::text',

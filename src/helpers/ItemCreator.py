@@ -1,5 +1,5 @@
 from src.util.DateTime import todays_date
-from src.helpers.DataFieldExtractor import DataFieldExtractor
+from src.helpers.FieldExtractor import FieldExtractor
 from src.util.Cleaner import clean_price
 from src import db
 
@@ -8,9 +8,9 @@ class ItemCreator(object):
     @staticmethod
     def add_new_item(item):
         # add new fields
-        maker_model_and_year = DataFieldExtractor.get_maker_model_and_year(item['link'])
+        maker_model_and_year = FieldExtractor.get_maker_model_and_year(item['link'])
         item.update(maker_model_and_year)
-        city_state_and_country = DataFieldExtractor.extract_city_state_and_country_from_location(item['location'])
+        city_state_and_country = FieldExtractor.extract_city_state_and_country_from_location(item['location'])
         item.update(city_state_and_country)
 
         price = item['price']

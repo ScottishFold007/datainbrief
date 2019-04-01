@@ -1,7 +1,7 @@
 from scrapy import Request
 from src.spiders.base import BaseSpider
-from src.helpers.URLManager import URLManager
-from src.helpers.DataFieldExtractor import DataFieldExtractor
+from src.helpers.url_generator import url_generator
+from src.helpers.FieldExtractor import FieldExtractor
 from enum import Enum
 
 
@@ -24,20 +24,19 @@ class BasicSpider(BaseSpider):
     # entry point
     def __init__(self, *args, **kwargs):
         super(BasicSpider, self).__init__(*args, **kwargs)
-        self.url_manager = URLManager()
-        self.data_field_extractor = DataFieldExtractor()
+        self.field_extractor = FieldExtractor()
         self.next_page = True
 
     # Send urls to parse
     def start_requests(self):
-        for day, url in self.url_manager.url_generator():
+        for day, url in url_generator():
             yield Request(url=url, meta={Constants.days: day}, callback=self.parse)
 
     def parse(self, response):
         # define the data to process
         search_results_table = response.xpath(Constants.search_results_table_selector)
         for row in search_results_table:
-            item = self.data_field_extractor.extract_item(row)
+            item = self.field_extractor.extract_item(row)
             if item[Constants.link] == '':
                 continue
             item[Constants.days] = response.meta[Constants.days]

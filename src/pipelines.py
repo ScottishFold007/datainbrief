@@ -12,7 +12,7 @@ from src.helpers import ItemUpdater
 class BasicPipeline(object):
     def __init__(self):
         db.check_removed_items()
-        self.links_seen = db.get_distinct_links()
+        self.links_seen = db.get_distinct_items_by_key("link")
 
     def process_item(self, item, spider):
         if item['link'] in self.links_seen:
@@ -32,6 +32,6 @@ class DetailPipeline(object):
         if 'engine_hours' in details:
             hours = item['engine_hours']
         else:
-            hours = -1
+            hours = 'missing'
         db.save_details(link, details, hours)
         return item

@@ -62,10 +62,10 @@ class BoatsDatabase(object):
 
     def check_removed_items(self):
         # set all as not updated first
-        date_of_yesterday = date_of_x_days_ago(2)
+        two_days_ago = date_of_x_days_ago(2)
 
         self.db[self.collection_name].update_many(
-            {"dates.last_seen": {"$lt": date_of_yesterday}},
+            {"dates.last_seen": {"$lt": two_days_ago}},
             {
                 '$set': {
                     'status.removed': True,
@@ -99,9 +99,6 @@ class BoatsDatabase(object):
     def get_distinct_items_by_key(cls, key_string):
         return cls.db[cls.collection_name].distinct(key_string)
 
-    @classmethod
-    def get_distinct_links(cls):
-        return cls.db[cls.collection_name].distinct("link")
 
     @classmethod
     def add_a_new_field(cls, field_name, field_data):
