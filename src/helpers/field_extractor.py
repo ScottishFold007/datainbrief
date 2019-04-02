@@ -37,7 +37,7 @@ def get_maker_model_and_year(link):
     year, model = split_link[2], split_link[3]
     model = model.split('-')
     # the last element is irrelevant
-    model = " ".join(model[:-1]).lower()
+    model = " ".join(model[:-1]).strip().lower()
     return {
         'model': model,
         'year': int(year)

@@ -8,6 +8,8 @@ from src.db import db_api
 from src.helpers.new_item_factory import add_new_item
 from src.helpers.item_updater import get_updates
 from src.models.ml import predict_price
+from src.util.Cleaner import get_lower
+
 
 class BasicPipeline(object):
     def __init__(self):
@@ -16,16 +18,18 @@ class BasicPipeline(object):
 
     def process_item(self, item, spider):
         link = item['link']
-        feature_list = ['hours', 'length', 'year', 'model']
-        predicted_price = predict_price(features)
+
         if link in self.links_seen:
             saved_item = db_api.get_a_single_item_by_key({"link": link})
             updates = get_updates(item, saved_item)
-
-            db_api.save_updated_item(link, updates)
+            db_api.update_and_increment_day(link, updates)
         else:
             item = add_new_item(item)
+            item = get_lower(item)
+            feature_list = ['hours', 'length', 'year', 'model']
+            predicted_price = predict_price(features)
             db_api.save_new_item(item)
+
         return item
 
     def close_spider(self, spider):
@@ -34,15 +38,14 @@ class BasicPipeline(object):
 
 class DetailPipeline(object):
     def process_item(self, item, spider):
-        link = item['link']
-        details = item['details']
-        if 'engine_hours' in details:
-            hours = item['engine_hours']
-        else:
-            hours = 'missing'
-        db_api.save_details(link, details, hours)
-        return item
+        link = item.pop('link')
 
+        if 'engine_hours' in item['details']:
+            item['hours'] = item['details']['engine_hours']
+
+        db_api.update_item(link, item)
+
+        return item
 
     def close_spider(self, spider):
         db_api.check_removed_items()

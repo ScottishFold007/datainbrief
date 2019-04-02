@@ -34,8 +34,6 @@ class DetailSpider(Spider):
                 detail_key = " ".join(line[0].split())
                 detail_key.replace(' ', '_')
                 detail_value = " ".join(line[1].split())
-                if detail_key == 'engine_hours':
-                    detail_value = int(detail_value)
                 details[detail_key] = detail_value
             else:
                 continue
@@ -44,10 +42,12 @@ class DetailSpider(Spider):
 
     def parse(self, response):
         full_specs = response.css(self.full_spec_selector).extract()
-        item_link = response.meta['url']
         details = self.get_details(full_specs)
+        link = response.meta['url']
 
-        yield {
-            'link': item_link,
+        item = {
+            'link': link,
             'details': details
         }
+
+        yield item
