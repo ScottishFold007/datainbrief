@@ -4,10 +4,10 @@
 #
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: https://doc.scrapy.org/en/latest/topics/item-pipeline.html
-from src.helpers import db_api
+from src.db import db_api
 from src.helpers.new_item_factory import add_new_item
 from src.helpers.item_updater import get_updates
-
+from src.models.ml import predict_price
 
 class BasicPipeline(object):
     def __init__(self):
@@ -16,6 +16,8 @@ class BasicPipeline(object):
 
     def process_item(self, item, spider):
         link = item['link']
+        feature_list = ['hours', 'length', 'year', 'model']
+        predicted_price = predict_price(features)
         if link in self.links_seen:
             saved_item = db_api.get_a_single_item_by_key({"link": link})
             updates = get_updates(item, saved_item)
@@ -40,3 +42,7 @@ class DetailPipeline(object):
             hours = 'missing'
         db_api.save_details(link, details, hours)
         return item
+
+
+    def close_spider(self, spider):
+        db_api.check_removed_items()

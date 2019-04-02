@@ -44,7 +44,7 @@ def get_updates(item, saved_item):
 
     status_updates = {
         'dates.last_seen': todays_date,
-        'status.updated': True,
+        'status.updated_today': True,
         'status.removed': False
     }
 

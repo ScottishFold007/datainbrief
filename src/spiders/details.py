@@ -1,4 +1,4 @@
-from src.helpers import db_api
+from src.db import db_api
 from scrapy import Request, Spider
 
 

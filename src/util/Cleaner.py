@@ -6,6 +6,8 @@ def clean_price(price):
     price = remove_messy_chars(price)
     if price.isdigit():
         price = int(price)
+    if isinstance(price,list):
+        price = price.pop()
     return price
 
 
