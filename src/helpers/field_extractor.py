@@ -19,7 +19,7 @@ def extract_item(row):
         try:
             field_value = row.css(selector).extract_first()
             if field_value:
-                field_value = " ".join(field_value.split())
+                field_value = " ".join(field_value.split()).lower()
                 if field_key == 'length':
                     field_value = int(re.findall(r'\d+', field_value)[0])
             else:
