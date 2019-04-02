@@ -1,6 +1,6 @@
-from src.util.DateTime import todays_date, date_of_x_days_ago
+from src.util.DateTime import date_of_x_days_ago
 from pymongo.errors import DuplicateKeyError
-from src.helpers.db import db, collection
+from src.db.credentials import db, collection
 
 
 def save_new_item(item):
