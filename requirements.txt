@@ -3,3 +3,4 @@ scrapy-crawlera
 pymongo
 setuptools
 tqdm
+flask
