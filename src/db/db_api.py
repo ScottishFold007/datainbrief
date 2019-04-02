@@ -15,7 +15,7 @@ def get_items_without_details():
     return db[collection].distinct('link', {'details': {'$exists': False}})
 
 
-def save_updated_item(link, updates):
+def update_and_increment_day(link, updates):
     # update only changed fields
     db[collection].find_one_and_update(
         {'link': link},  # filter
@@ -26,15 +26,12 @@ def save_updated_item(link, updates):
     )
 
 
-def save_details(link, details, hours):
+def update_item(link, updates):
     db[collection].update_one(
         {'link': link},
         {
-            '$set':
-                {
-                    'details': details,
-                    'hours': hours
-                }
+            '$set': updates
+
         }
     )
 
