@@ -37,11 +37,31 @@ class BasicPipeline(object):
 
 
 class DetailPipeline(object):
+
+    @staticmethod
+    def get_subfields(item):
+        if 'engine_hours' in item['details']:
+            hours = item['details']['engine_hours']
+            try:
+                hours = int(hours)
+            except TypeError:
+                pass
+            item['hours'] = hours
+
+        if 'total power' in item['details']:
+            power = item['details']['total power']
+            try:
+                power = int(power)
+            except TypeError:
+                pass
+            item['power'] = power
+
+        return item
+
     def process_item(self, item, spider):
         link = item.pop('link')
 
-        if 'engine_hours' in item['details']:
-            item['hours'] = item['details']['engine_hours']
+        item = self.get_subfields(item)
 
         db_api.update_item(link, item)
 
