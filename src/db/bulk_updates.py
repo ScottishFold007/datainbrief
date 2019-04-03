@@ -5,7 +5,10 @@ import re
 from tqdm import tqdm
 
 query = {'details.loa': {"$exists": True}}
-cursor = db.boats.find(query, snapshot=True).count()
+cursor = db.boats.find(query, snapshot=True)
+
+
+# length = re.findall(r'\d+', str(length))[0]
 
 
 def bulk_exec(ops):
@@ -17,12 +20,22 @@ def bulk_exec(ops):
         print(bwe.details)
 
 
+def get_updates(doc):
+    loa = doc['details']['loa']
+
+    length = loa.split()[0]
+
+    return float(length)
+
+
 def bulk_base():
     ops = []
 
     for doc in tqdm(cursor):
         query = {'_id': doc['_id']}
         updates = dict()
+
+        updates = get_updates()
 
         if updates:
             new_update = UpdateOne(query, {'$set': updates})
@@ -35,20 +48,6 @@ def bulk_base():
         bulk_exec(ops)
 
 
-def old():
-    def get_hours(doc):
-        details = doc.get('details')
-        if details and isinstance(details, dict) and 'engine_hours' in details:
-            hours = details['engine_hours']
-            if hours:
-                return int(hours)
-
-    def get_length(doc):
-        length = doc.get('length')
-
-        if not length:
-            return None
-
-        length = re.findall(r'\d+', str(length))[0]
-        return int(length)
-
+def test():
+    for doc in tqdm(cursor):
+        print(get_updates(doc))

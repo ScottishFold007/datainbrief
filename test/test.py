@@ -1,6 +1,6 @@
 from src.db.credentials import db
-from src.db.bulk_updates import old_update
+from src.db.bulk_updates import test
 
-old_update()
+test()
 
 
