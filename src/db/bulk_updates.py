@@ -4,7 +4,8 @@ from pymongo import UpdateOne
 import re
 from tqdm import tqdm
 
-cursor = db.boats.find({}, snapshot=True)
+query = {'details.loa': {"$exists": True}}
+cursor = db.boats.find(query, snapshot=True).count()
 
 
 def bulk_exec(ops):
@@ -14,6 +15,24 @@ def bulk_exec(ops):
         return ops
     except BulkWriteError as bwe:
         print(bwe.details)
+
+
+def bulk_base():
+    ops = []
+
+    for doc in tqdm(cursor):
+        query = {'_id': doc['_id']}
+        updates = dict()
+
+        if updates:
+            new_update = UpdateOne(query, {'$set': updates})
+            ops.append(new_update)
+
+        if len(ops) >= 10000:
+            ops = bulk_exec(ops)
+
+    if ops:
+        bulk_exec(ops)
 
 
 def old():
@@ -33,61 +52,3 @@ def old():
         length = re.findall(r'\d+', str(length))[0]
         return int(length)
 
-    def update_db():
-        ops = []
-
-        for doc in tqdm(cursor):
-            query = {'_id': doc['_id']}
-            updates = dict()
-
-            lows = ['model', 'country', 'broker']
-
-            if doc.get(lows[0]).islower() and doc.get(lows[1]).islower() and doc.get(lows[2]).islower():
-                continue
-
-            for low in lows:
-                updates[low] = doc.get(low).strip().lower()
-
-            new_update = UpdateOne(query, {'$set': updates})
-            ops.append(new_update)
-
-            if len(ops) >= 10000:
-                ops = bulk_exec(ops)
-
-        if ops:
-            bulk_exec(ops)
-
-    def old_update():
-        ops = []
-
-        for doc in tqdm(cursor):
-            query = {'_id': doc['_id']}
-            updates = dict()
-
-            price = doc['price']
-
-            if isinstance(price, list):
-                updates['price'] = price.pop()
-
-            try:
-                updates['year'] = int(doc.get('year'))
-            except TypeError:
-                pass
-
-            hours = get_hours(doc)
-            if hours:
-                updates['hours'] = hours
-
-            length = get_length(doc)
-            if length:
-                updates['length'] = hours
-
-            if updates:
-                new_update = UpdateOne(query, {'$set': updates})
-                ops.append(new_update)
-
-            if len(ops) >= 10000:
-                ops = bulk_exec(ops)
-
-        if ops:
-            bulk_exec(ops)
