@@ -8,7 +8,7 @@ from src.db import db_api
 from src.helpers.new_item_factory import add_new_item
 from src.helpers.item_updater import get_updates
 from src.models.ml import predict_price
-from src.util.Cleaner import get_lower
+from src.util.cleaner_ops import get_lower
 
 
 class BasicPipeline(object):
