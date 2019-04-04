@@ -1,4 +1,4 @@
-from src.util.DateTime import date_of_x_days_ago
+from src.util.date_time_ops import date_of_x_days_ago
 from pymongo.errors import DuplicateKeyError
 from src.db.credentials import db, collection
 
@@ -16,56 +16,34 @@ def get_items_without_details():
 
 
 def update_and_increment_day(link, updates):
-    # update only changed fields
-    db[collection].find_one_and_update(
-        {'link': link},  # filter
-        {
-            '$set': updates,
-            '$inc': {'days_on_market': 1}
-        }
-    )
+    query = {'link': link}
+    command = {'$set': updates, '$inc': {'days_on_market': 1}}
+    db[collection].find_one_and_update(query, command)
 
 
 def update_item(link, updates):
-    db[collection].update_one(
-        {'link': link},
-        {
-            '$set': updates
-
-        }
-    )
+    query = {'link': link}
+    command = {'$set': updates}
+    db[collection].update_one(query, command)
 
 
 def check_removed_items():
     # set all as not updated first
     three_days_ago = date_of_x_days_ago(3)
-
-    db[collection].update_many(
-        {"dates.last_seen": {"$lt": three_days_ago}},
-        {
-            '$set': {
-                'status.removed': True,
-                'dates.removed': three_days_ago
-            }
-        }
-    )
+    query = {"dates.last_seen": {"$lt": three_days_ago}}
+    command = {'$set': {'status.removed': True, 'dates.removed': three_days_ago}}
+    db[collection].update_many(query, command)
 
 
 def rename_field(old_name, new_name):
-    db[collection].update_many({}, {'$rename': {old_name: new_name}})
+    command = {'$rename': {old_name: new_name}}
+    db[collection].update_many({}, command)
     print('renamed %s to %s' % (old_name, new_name))
 
 
-# Remove multiple fields
-
 def remove_field(field_name):
-    db[collection].update(
-        {},
-        {
-            '$unset': {field_name: ""}
-        },
-        multi=True
-    )
+    command = {'$unset': {field_name: ""}}
+    db[collection].update({}, command, multi=True)
     print('removed field %s' % field_name)
 
 
@@ -78,14 +56,9 @@ def get_distinct_items_by_key(key_string):
 
 
 def add_a_new_field(field_name, field_data):
-    db[collection].find(
-        {
-            field_name: {"$exists": False},
-        },
-        {
-            '$set': {field_name: field_data}
-        }
-    )
+    query = {field_name: {"$exists": False}}
+    update = {'$set': {field_name: field_data}}
+    db[collection].find(query, update)
 
 
 def delete_if_a_field_does_not_exist(field_name):
