@@ -23,7 +23,14 @@ def bulk_exec(ops):
 def get_maker(doc):
     updates = dict()
 
+    model = doc['model']
 
+    for maker in makers:
+        if maker in model:
+            updates['maker'] = maker
+            break
+        else:
+            updates['maker'] = model.split()[0]
 
     return updates
 
@@ -50,4 +57,4 @@ def bulk_update():
 
 def test():
     for doc in tqdm(cursor):
-        print(get_updates(doc))
+        print(get_maker(doc))
