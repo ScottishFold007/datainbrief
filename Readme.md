@@ -1,3 +1,11 @@
+## Use cases
++ automated market analysis
++ valuation
++ recommendation
++ decision support 
++ unify separate data sources
++ turn data to answers
+
 ## Architecture
 ### Simplified 
 
