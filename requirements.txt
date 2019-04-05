@@ -3,3 +3,6 @@ scrapy-crawlera
 pymongo
 setuptools
 
+pandas
+numpy
+sklearn
